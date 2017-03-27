@@ -26,14 +26,16 @@ def svm_loss_naive(W, X, y, reg):
   num_train = X.shape[0]
   loss = 0.0
   for i in xrange(num_train):
-    scores = X[i].dot(W)
-    correct_class_score = scores[y[i]]
+    scores = X[i].dot(W) #(10,1)
+    correct_class_score = scores[y[i]] # scalar
     for j in xrange(num_classes):
       if j == y[i]:
         continue
       margin = scores[j] - correct_class_score + 1 # note delta = 1
       if margin > 0:
         loss += margin
+        dW[:,j] += X[i]
+        dW[:,y[i]] -= X[i]
 
   # Right now the loss is a sum over all training examples, but we want it
   # to be an average instead so we divide by num_train.
@@ -50,6 +52,10 @@ def svm_loss_naive(W, X, y, reg):
   # loss is being computed. As a result you may need to modify some of the    #
   # code above to compute the gradient.                                       #
   #############################################################################
+
+  # Taking care of reg
+  dW += reg * W
+  dW /= num_train
 
 
   return loss, dW
@@ -69,7 +75,14 @@ def svm_loss_vectorized(W, X, y, reg):
   # Implement a vectorized version of the structured SVM loss, storing the    #
   # result in loss.                                                           #
   #############################################################################
-  pass
+  scores = X.dot(W)
+  correct_class_score = np.choose(y, scores.T) # (500,)
+  margin = (scores.T - correct_class_score) # (10,500)
+  correct_class_idx = margin == 0 # (10,500) get right classes
+  margin[~correct_class_idx] += 1 # (10,500) add delta
+  loss = margin.clip(min=0) / X.shape[0] # set negatives to 0 (10,500)
+  loss = np.sum(loss) # (1)
+  loss += (0.5 * reg * np.sum(W * W))
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
@@ -84,6 +97,9 @@ def svm_loss_vectorized(W, X, y, reg):
   # to reuse some of the intermediate values that you used to compute the     #
   # loss.                                                                     #
   #############################################################################
+  num_happen = np.sum(margin > 0, axis=0)
+  dW = X.T.dot((margin > 0).T) - X.T.dot((correct_class_idx * num_happen).T)
+  dW /= X.shape[0]
   pass
   #############################################################################
   #                             END OF YOUR CODE                              #
