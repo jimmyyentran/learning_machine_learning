@@ -29,7 +29,17 @@ def softmax_loss_naive(W, X, y, reg):
   # here, it is easy to run into numeric instability. Don't forget the        #
   # regularization!                                                           #
   #############################################################################
-  pass
+  scores = X.dot(W) # (N,C)
+  max_scores = np.max(scores, axis=1) # (N,)
+  scores_shift = (scores.T - max_scores).T # (N,C)
+  scores_shift = np.exp(scores_shift) # (N,C)
+  ones_vec = np.ones(scores_shift.shape[1]) # (C,)
+  scores_row_sum = scores_shift.dot(ones_vec) # (N,)
+  correct_class_score = np.choose(y, scores_shift.T) # (N,)
+  loss = -np.log(correct_class_score / scores_row_sum) # (N,)
+  loss = np.sum(loss) / X.shape[0] # (,)
+  loss += (0.5 * reg * np.sum(W * W))
+  #  print pred.shape
   #############################################################################
   #                          END OF YOUR CODE                                 #
   #############################################################################
