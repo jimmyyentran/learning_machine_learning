@@ -38,12 +38,17 @@ def softmax_loss_naive(W, X, y, reg):
   ones_vec = np.ones(scores_shift.shape[1]) # (C,)
   scores_row_sum = scores_shift.dot(ones_vec) # (N,) # row sum using vectors
   correct_class_score = np.choose(y, scores_shift.T) # (N,)
-  loss = -np.log(correct_class_score / scores_row_sum) # (N,)
-  loss = np.sum(loss) / X.shape[0] # (,)
+  correct_prob = correct_class_score / scores_row_sum # (N,)
+  loss = -np.mean(np.log(correct_prob)) # (,)
   loss += (0.5 * reg * np.sum(W * W)) # (,) regularization
 
-  # Calculare dW
-
+  # Calculate dW
+  p = (scores_shift.T / scores_row_sum).T # (N,C)
+  ind = np.zeros(p.shape) # (N,C)
+  ind[range(X.shape[0]),y] = 1
+  dW = X.T.dot((p - ind)) # (D,C)
+  dW /= X.shape[0]
+  dW += reg*W
   #############################################################################
   #                          END OF YOUR CODE                                 #
   #############################################################################
