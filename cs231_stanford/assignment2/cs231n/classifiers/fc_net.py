@@ -5,6 +5,9 @@ import numpy as np
 from cs231n.layers import *
 from cs231n.layer_utils import *
 
+# from cs231_stanford.assignment2.cs231n.layer_utils import *
+# from cs231_stanford.assignment2.cs231n.layers import *
+
 
 class TwoLayerNet(object):
     """
@@ -47,7 +50,10 @@ class TwoLayerNet(object):
         # weights and biases using the keys 'W1' and 'b1' and second layer weights #
         # and biases using the keys 'W2' and 'b2'.                                 #
         ############################################################################
-        pass
+        self.params['W1'] = np.random.normal(0, weight_scale, [input_dim, hidden_dim])
+        self.params['b1'] = np.zeros(hidden_dim)
+        self.params['W2'] = np.random.normal(0, weight_scale, [hidden_dim, num_classes])
+        self.params['b2'] = np.zeros(num_classes)
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
@@ -77,7 +83,9 @@ class TwoLayerNet(object):
         # TODO: Implement the forward pass for the two-layer net, computing the    #
         # class scores for X and storing them in the scores variable.              #
         ############################################################################
-        pass
+        act_1, l_1_cache = affine_relu_forward(X, self.params['W1'], self.params['b1'])
+        fc, l_2_cache = affine_relu_forward(act_1, self.params['W2'], self.params['b2'])
+        scores = fc
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
@@ -97,7 +105,16 @@ class TwoLayerNet(object):
         # automated tests, make sure that your L2 regularization includes a factor #
         # of 0.5 to simplify the expression for the gradient.                      #
         ############################################################################
-        pass
+        loss, dx = softmax_loss(scores, y)
+        regularizers = np.sum(np.square(self.params['W2'])/2) + \
+                       np.sum(np.square(self.params['W1'])/2)
+        loss += self.reg * regularizers
+        dx_2, dw_2, db_2 = affine_relu_backward(dx, l_2_cache)
+        grads['W2'] = dw_2
+        grads['b2'] = db_2
+        dx_1, dw_1, db_1 = affine_relu_backward(dx_2, l_1_cache)
+        grads['W1'] = dw_1
+        grads['b1'] = db_1
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
