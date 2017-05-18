@@ -110,10 +110,10 @@ class TwoLayerNet(object):
                        np.sum(np.square(self.params['W1'])/2)
         loss += self.reg * regularizers
         dx_2, dw_2, db_2 = affine_relu_backward(dx, l_2_cache)
-        grads['W2'] = dw_2
+        grads['W2'] = dw_2 + self.reg * self.params['W2']
         grads['b2'] = db_2
         dx_1, dw_1, db_1 = affine_relu_backward(dx_2, l_1_cache)
-        grads['W1'] = dw_1
+        grads['W1'] = dw_1 + self.reg * self.params['W1']
         grads['b1'] = db_1
         ############################################################################
         #                             END OF YOUR CODE                             #
