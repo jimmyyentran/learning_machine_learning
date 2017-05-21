@@ -244,18 +244,14 @@ class FullyConnectedNet(object):
         # self.bn_params[1] to the forward pass for the second batch normalization #
         # layer, etc.                                                              #
         ############################################################################
-        self.params['W0_act'] = X # Inputs mimic activation layer
+        params_helper = {}
+        params_helper['W0_act'] = X # Inputs mimic activation layer
         for i in range(1, self.num_layers + 1):
-            # print('W' + str(i))
-            # print(self.params['W' + str(i)].shape)
-            # print(self.params['b' + str(i)].shape)
-            fwd = affine_relu_forward(self.params['W' + str(i - 1) + "_act"],
+            fwd = affine_relu_forward(params_helper['W' + str(i - 1) + "_act"],
                                       self.params['W' + str(i)],
                                       self.params['b' + str(i)])
-            self.params['W' + str(i) + "_act"], self.params['W' + str(i) + "_cache"] = fwd
-        #     print(fwd[0].shape)
-        # print(self.params['W3_act'].shape)
-        scores = self.params['W' + str(self.num_layers) + '_act']
+            params_helper['W' + str(i) + "_act"], params_helper['W' + str(i) + "_cache"] = fwd
+        scores = params_helper['W' + str(self.num_layers) + '_act']
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
@@ -281,15 +277,12 @@ class FullyConnectedNet(object):
         loss, dx = softmax_loss(scores, y)
         regularizers = [np.sum(np.square(self.params['W' + str(i)])/2)
                                for i in range(1, self.num_layers + 1)]
-        assert len(regularizers) == 3
+        assert len(regularizers) == self.num_layers
         loss += self.reg * sum(regularizers)
-        # for i in range(1, self.num_layers + 1):
-        #     dx_2, dw_2, db_2 = affine_relu_backward(dx, l_2_cache)
-        #     grads['W2'] = dw_2 + self.reg * self.params['W2']
-        #     grads['b2'] = db_2
-        #     dx_1, dw_1, db_1 = affine_relu_backward(dx_2, l_1_cache)
-        #     grads['W1'] = dw_1 + self.reg * self.params['W1']
-        #     grads['b1'] = db_1
+        for i in reversed(range(1, self.num_layers + 1)):
+            dx, dw, db = affine_relu_backward(dx, params_helper['W' + str(i) + "_cache"])
+            grads['W' + str(i)] = dw + self.reg * self.params['W' + str(i)]
+            grads['b' + str(i)] = db
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
