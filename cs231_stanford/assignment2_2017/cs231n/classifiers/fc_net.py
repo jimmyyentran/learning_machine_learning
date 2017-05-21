@@ -263,7 +263,7 @@ class FullyConnectedNet(object):
         #     else:
         #         print(k)
 
-        scores = params_helper['W' + str(self.num_layers) + '_act']
+        scores = params_helper['W' + str(nl) + '_act']
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
@@ -288,13 +288,27 @@ class FullyConnectedNet(object):
         ############################################################################
         loss, dx = softmax_loss(scores, y)
         regularizers = [np.sum(np.square(self.params['W' + str(i)]) / 2)
-                        for i in range(1, self.num_layers + 1)]
-        assert len(regularizers) == self.num_layers
+                        for i in range(1, nl + 1)]
+        assert len(regularizers) == nl
         loss += self.reg * sum(regularizers)
-        for i in reversed(range(1, self.num_layers + 1)):
+
+        # Fully connected layer
+        dx, dw, db = affine_backward(dx, params_helper['W' + str(nl) + "_cache"])
+        grads['W' + str(nl)] = dw + self.reg * self.params['W' + str(nl)]
+        grads['b' + str(nl)] = db
+
+        for i in reversed(range(1, nl)):  # Exclude fc layer
             dx, dw, db = affine_relu_backward(dx, params_helper['W' + str(i) + "_cache"])
             grads['W' + str(i)] = dw + self.reg * self.params['W' + str(i)]
             grads['b' + str(i)] = db
+
+        # for k, v in grads.items():
+        #     if isinstance(v, np.ndarray):
+        #         print(k, v.shape)
+        #     else:
+        #         print(k)
+        # exit(0)
+
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
