@@ -5,6 +5,7 @@ import numpy as np
 from cs231n.layers import *
 from cs231n.layer_utils import *
 
+
 # from cs231_stanford.assignment2.cs231n.layer_utils import *
 # from cs231_stanford.assignment2.cs231n.layers import *
 
@@ -25,7 +26,7 @@ class TwoLayerNet(object):
     self.params that maps parameter names to numpy arrays.
     """
 
-    def __init__(self, input_dim=3*32*32, hidden_dim=100, num_classes=10,
+    def __init__(self, input_dim=3 * 32 * 32, hidden_dim=100, num_classes=10,
                  weight_scale=1e-3, reg=0.0):
         """
         Initialize a new network.
@@ -57,7 +58,6 @@ class TwoLayerNet(object):
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
-
 
     def loss(self, X, y=None):
         """
@@ -106,8 +106,8 @@ class TwoLayerNet(object):
         # of 0.5 to simplify the expression for the gradient.                      #
         ############################################################################
         loss, dx = softmax_loss(scores, y)
-        regularizers = np.sum(np.square(self.params['W2'])/2) + \
-                       np.sum(np.square(self.params['W1'])/2)
+        regularizers = np.sum(np.square(self.params['W2']) / 2) + \
+                       np.sum(np.square(self.params['W1']) / 2)
         loss += self.reg * regularizers
         dx_2, dw_2, db_2 = affine_relu_backward(dx, l_2_cache)
         grads['W2'] = dw_2 + self.reg * self.params['W2']
@@ -138,7 +138,7 @@ class FullyConnectedNet(object):
     self.params dictionary and will be learned using the Solver class.
     """
 
-    def __init__(self, hidden_dims, input_dim=3*32*32, num_classes=10,
+    def __init__(self, hidden_dims, input_dim=3 * 32 * 32, num_classes=10,
                  dropout=0, use_batchnorm=False, reg=0.0,
                  weight_scale=1e-2, dtype=np.float32, seed=None):
         """
@@ -213,7 +213,6 @@ class FullyConnectedNet(object):
         for k, v in self.params.items():
             self.params[k] = v.astype(dtype)
 
-
     def loss(self, X, y=None):
         """
         Compute loss and gradient for the fully-connected net.
@@ -244,13 +243,26 @@ class FullyConnectedNet(object):
         # self.bn_params[1] to the forward pass for the second batch normalization #
         # layer, etc.                                                              #
         ############################################################################
-        params_helper = {}
-        params_helper['W0_act'] = X # Inputs mimic activation layer
-        for i in range(1, self.num_layers + 1):
+        params_helper = {'W0_act': X}  # Inputs mimic activation layer
+        nl = self.num_layers  # Alias
+        for i in range(1, nl):  # Without fully connected layer
             fwd = affine_relu_forward(params_helper['W' + str(i - 1) + "_act"],
                                       self.params['W' + str(i)],
                                       self.params['b' + str(i)])
             params_helper['W' + str(i) + "_act"], params_helper['W' + str(i) + "_cache"] = fwd
+
+        # Only forward pass fully connected layer
+        fwd = affine_forward(params_helper['W' + str(nl - 1) + "_act"],
+                             self.params['W' + str(nl)],
+                             self.params['b' + str(nl)])
+        params_helper['W' + str(nl) + '_act'], params_helper[ 'W' + str(nl) + "_cache"] = fwd
+
+        # for k, v in params_helper.items():
+        #     if isinstance(v, np.ndarray):
+        #         print(k, v.shape)
+        #     else:
+        #         print(k)
+
         scores = params_helper['W' + str(self.num_layers) + '_act']
         ############################################################################
         #                             END OF YOUR CODE                             #
@@ -275,8 +287,8 @@ class FullyConnectedNet(object):
         # of 0.5 to simplify the expression for the gradient.                      #
         ############################################################################
         loss, dx = softmax_loss(scores, y)
-        regularizers = [np.sum(np.square(self.params['W' + str(i)])/2)
-                               for i in range(1, self.num_layers + 1)]
+        regularizers = [np.sum(np.square(self.params['W' + str(i)]) / 2)
+                        for i in range(1, self.num_layers + 1)]
         assert len(regularizers) == self.num_layers
         loss += self.reg * sum(regularizers)
         for i in reversed(range(1, self.num_layers + 1)):
