@@ -182,11 +182,14 @@ class FullyConnectedNet(object):
         ############################################################################
         total_dims = [input_dim] + hidden_dims + [num_classes]
 
+        # print("Initialize")
         for i in range(len(total_dims) - 1):
-            # print("W" + str(i + 1) + " Shape: ", total_dims[i], total_dims[i + 1])
             self.params['W' + str(i + 1)] = np.random.normal(0, weight_scale,
                                                              [total_dims[i], total_dims[i + 1]])
             self.params['b' + str(i + 1)] = np.zeros(total_dims[i + 1])
+            # print(str(i), total_dims[i], str(i + 1), total_dims[i + 1])
+            # print("W" + str(i + 1) + " Shape: ", total_dims[i], total_dims[i + 1],
+            #       np.sum(self.params['W' + str(i+1)]))
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
@@ -243,27 +246,34 @@ class FullyConnectedNet(object):
         # self.bn_params[1] to the forward pass for the second batch normalization #
         # layer, etc.                                                              #
         ############################################################################
-        params_helper = {'W0_act': X}  # Inputs mimic activation layer
+        hyperparameter = {'W0_act': X}  # Inputs mimic activation layer
         nl = self.num_layers  # Alias
         for i in range(1, nl):  # Without fully connected layer
-            fwd = affine_relu_forward(params_helper['W' + str(i - 1) + "_act"],
+            fwd = affine_relu_forward(hyperparameter['W' + str(i - 1) + "_act"],
                                       self.params['W' + str(i)],
                                       self.params['b' + str(i)])
-            params_helper['W' + str(i) + "_act"], params_helper['W' + str(i) + "_cache"] = fwd
+            hyperparameter['W' + str(i) + "_act"], hyperparameter['W' + str(i) + "_cache"] = fwd
 
         # Only forward pass fully connected layer
-        fwd = affine_forward(params_helper['W' + str(nl - 1) + "_act"],
+        fwd = affine_forward(hyperparameter['W' + str(nl - 1) + "_act"],
                              self.params['W' + str(nl)],
                              self.params['b' + str(nl)])
-        params_helper['W' + str(nl) + '_act'], params_helper[ 'W' + str(nl) + "_cache"] = fwd
+        hyperparameter['W' + str(nl) + '_act'], hyperparameter[ 'W' + str(nl) + "_cache"] = fwd
 
-        # for k, v in params_helper.items():
+        # print("Params")
+        # for k, v in self.params.items():
+        #     if isinstance(v, np.ndarray):
+        #         print(k, v.shape)
+        #     else:
+        #         print(k)
+        # print("Hyperparams")
+        # for k, v in hyperparameter.items():
         #     if isinstance(v, np.ndarray):
         #         print(k, v.shape)
         #     else:
         #         print(k)
 
-        scores = params_helper['W' + str(nl) + '_act']
+        scores = hyperparameter['W' + str(nl) + '_act']
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
@@ -289,19 +299,26 @@ class FullyConnectedNet(object):
         loss, dx = softmax_loss(scores, y)
         regularizers = [np.sum(np.square(self.params['W' + str(i)]) / 2)
                         for i in range(1, nl + 1)]
+        # print("Regularizers")
+        # print(regularizers)
+        # for i in range(1, nl + 1):
+        #     print('W'+str(i), self.params['W'+str(i)].shape)
         assert len(regularizers) == nl
         loss += self.reg * sum(regularizers)
 
         # Fully connected layer
-        dx, dw, db = affine_backward(dx, params_helper['W' + str(nl) + "_cache"])
+        dx, dw, db = affine_backward(dx, hyperparameter['W' + str(nl) + "_cache"])
         grads['W' + str(nl)] = dw + self.reg * self.params['W' + str(nl)]
         grads['b' + str(nl)] = db
 
         for i in reversed(range(1, nl)):  # Exclude fc layer
-            dx, dw, db = affine_relu_backward(dx, params_helper['W' + str(i) + "_cache"])
+            # print(i)
+            dx, dw, db = affine_relu_backward(dx, hyperparameter['W' + str(i) + "_cache"])
             grads['W' + str(i)] = dw + self.reg * self.params['W' + str(i)]
             grads['b' + str(i)] = db
+        # exit(0)
 
+        # print("Grads")
         # for k, v in grads.items():
         #     if isinstance(v, np.ndarray):
         #         print(k, v.shape)
