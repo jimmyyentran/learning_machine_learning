@@ -65,15 +65,23 @@ def sgd_momentum(w, dw, config=None):
     # TODO: Implement the momentum update formula. Store the updated value in #
     # the next_w variable. You should also use and update the velocity v.     #
     ###########################################################################
+    # Debug
+    # old_v = np.sum(v)
+
     v = config['momentum'] * v - config['learning_rate'] * dw
     next_w = w + v
+
+    # Debug
+    # new_v = np.sum(v)
+    # sign = '+' if new_v > old_v else '-'
+    # print('next_w: %10.2e, dw: %10.2e, o_v: %10.2e, v: %10.2e, %s' % (np.sum(next_w), np.sum(dw),
+    #                                                                          old_v, new_v, sign))
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
     config['velocity'] = v
 
     return next_w, config
-
 
 
 def rmsprop(x, dx, config=None):
