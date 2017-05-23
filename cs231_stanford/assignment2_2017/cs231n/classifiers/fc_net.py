@@ -181,6 +181,7 @@ class FullyConnectedNet(object):
         # parameters should be initialized to zero.                                #
         ############################################################################
         total_dims = [input_dim] + hidden_dims + [num_classes]
+        self.weight_scale = weight_scale
 
         # print("Initialize")
         for i in range(len(total_dims) - 1):
