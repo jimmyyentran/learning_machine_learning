@@ -1,5 +1,6 @@
 from builtins import range
 import numpy as np
+import math
 
 
 def affine_forward(x, w, b):
@@ -82,7 +83,7 @@ def relu_forward(x):
     ###########################################################################
     # TODO: Implement the ReLU forward pass.                                  #
     ###########################################################################
-    out = x.clip(min = 0)
+    out = x.clip(min=0)
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -176,12 +177,22 @@ def batchnorm_forward(x, gamma, beta, bn_param):
         # variance, storing your result in the running_mean and running_var   #
         # variables.                                                          #
         #######################################################################
+        cache = {}
+
         sample_mean = np.mean(x)
         sample_var = np.var(x)
         running_mean = momentum * running_mean + (1 - momentum) * sample_mean
         running_var = momentum * running_var + (1 - momentum) * sample_var
         x_hat = (x - sample_mean) / np.sqrt(sample_var + eps)  # Normalize
         out = gamma * x_hat + beta
+
+        cache['mu'] = sample_mean
+        cache['sigma'] = sample_var
+        cache['x_hat'] = x_hat
+        cache['gamma'] = gamma
+        cache['beta'] = beta
+        cache['x'] = x
+        cache['eps'] = eps
         #######################################################################
         #                           END OF YOUR CODE                          #
         #######################################################################
@@ -229,7 +240,34 @@ def batchnorm_backward(dout, cache):
     # TODO: Implement the backward pass for batch normalization. Store the    #
     # results in the dx, dgamma, and dbeta variables.                         #
     ###########################################################################
+    N, D = dout.shape
 
+    dx_hat = dout * cache['gamma']  # (N, D)
+    dsigma = dx_hat * (cache['x'] - cache['mu']) * \
+             (-1 / 2) * (cache['sigma'] + cache['eps']) ** (-3 / 2)  # (N, D)
+    dsigma = np.ones(N).dot(dsigma)  # (D,)
+
+    dmu_1 = dx_hat * (-1 / math.sqrt(cache['sigma'] + cache['eps']))
+    dmu_2 = -2 * (cache['x'] - cache['mu'])
+    dmu = np.ones(N).dot(dmu_1) + \
+          dsigma * np.ones(N).dot(dmu_2) / N
+
+    print("dsigma:",  dsigma.shape)
+    print("dmu:",  dmu.shape)
+    test = dx_hat * 1 / math.sqrt(cache['sigma'] + cache['eps'])
+    test1 = 2 * (cache['x'] - cache['mu']) / N * dsigma
+    test2 = dmu / N
+    print("test", test.shape)
+    print("test1", test1.shape)
+    print("test2", test2.shape)
+
+    # dx = dx_hat * 1 / math.sqrt(cache['sigma'] + cache['eps']) + \
+    #      (2 * (cache['x'] - cache['mu']) / N).dot(dsigma) + dmu / N
+    dx = dx_hat * 1 / math.sqrt(cache['sigma'] + cache['eps']) + \
+         2 * (cache['x'] - cache['mu']) / N * dsigma + dmu / N
+
+    dbeta = np.ones(N).dot(dout)
+    dgamma = np.ones(N).dot(dout * cache['x_hat'])
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
