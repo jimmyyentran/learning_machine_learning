@@ -340,11 +340,11 @@ def batchnorm_forward_2(x, gamma, beta, bn_param):
 
 def batchnorm_backward_2(dout, cache):
     # unfold the variables stored in cache
-    sqrtvar = np.sqrt(cache['sigma'] + cache['eps'])
-    ivar = 1. / sqrtvar
-    cache = (cache['x_hat'], cache['gamma'], cache['mu'], cache['sigma'], cache['eps'])
-    xhat, gamma, xmu, var, eps = cache
-    # xhat,gamma,xmu,ivar,sqrtvar,var,eps = cache
+    # sqrtvar = np.sqrt(cache['sigma'] + cache['eps'])
+    # ivar = 1. / sqrtvar
+    # cache = (cache['x_hat'], cache['gamma'], cache['mu'], cache['sigma'], cache['eps'])
+    # xhat, gamma, xmu, var, eps = cache
+    xhat,gamma,xmu,ivar,sqrtvar,var,eps = cache
 
     # get the dimensions of the input/output
     N, D = dout.shape

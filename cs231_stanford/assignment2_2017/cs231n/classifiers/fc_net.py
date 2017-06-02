@@ -188,9 +188,17 @@ class FullyConnectedNet(object):
             self.params['W' + str(i + 1)] = np.random.normal(0, weight_scale,
                                                              [total_dims[i], total_dims[i + 1]])
             self.params['b' + str(i + 1)] = np.zeros(total_dims[i + 1])
+            if use_batchnorm:
+                self.params['gamma' + str(i + 1)] = np.ones(total_dims[i + 1])
+                self.params['beta' + str(i + 1)] = np.zeros(total_dims[i + 1])
+            # print(self.params['gamma' + str(i + 1)].shape)
             # print(str(i), total_dims[i], str(i + 1), total_dims[i + 1])
             # print("W" + str(i + 1) + " Shape: ", total_dims[i], total_dims[i + 1],
             #       np.sum(self.params['W' + str(i+1)]))
+
+        # We don't batch normalize the last layer
+        self.params.pop('gamma' + str(len(total_dims) - 1), None)
+        self.params.pop('beta' + str(len(total_dims) - 1), None)
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
@@ -250,16 +258,24 @@ class FullyConnectedNet(object):
         hyperparameter = {'W0_act': X}  # Inputs mimic activation layer
         nl = self.num_layers  # Alias
         for i in range(1, nl):  # Without fully connected layer
-            fwd = affine_relu_forward(hyperparameter['W' + str(i - 1) + "_act"],
-                                      self.params['W' + str(i)],
-                                      self.params['b' + str(i)])
+            if self.use_batchnorm:
+                fwd = affine_bn_relu_forward(hyperparameter['W' + str(i - 1) + "_act"],
+                                             self.params['W' + str(i)],
+                                             self.params['b' + str(i)],
+                                             self.params['gamma' + str(i)],
+                                             self.params['beta' + str(i)],
+                                             self.bn_params[i - 1])
+            else:
+                fwd = affine_relu_forward(hyperparameter['W' + str(i - 1) + "_act"],
+                                          self.params['W' + str(i)],
+                                          self.params['b' + str(i)])
             hyperparameter['W' + str(i) + "_act"], hyperparameter['W' + str(i) + "_cache"] = fwd
 
         # Only forward pass fully connected layer
         fwd = affine_forward(hyperparameter['W' + str(nl - 1) + "_act"],
                              self.params['W' + str(nl)],
                              self.params['b' + str(nl)])
-        hyperparameter['W' + str(nl) + '_act'], hyperparameter[ 'W' + str(nl) + "_cache"] = fwd
+        hyperparameter['W' + str(nl) + '_act'], hyperparameter['W' + str(nl) + "_cache"] = fwd
 
         # print("Params")
         # for k, v in self.params.items():
@@ -300,10 +316,7 @@ class FullyConnectedNet(object):
         loss, dx = softmax_loss(scores, y)
         regularizers = [np.sum(np.square(self.params['W' + str(i)]) / 2)
                         for i in range(1, nl + 1)]
-        # print("Regularizers")
-        # print(regularizers)
-        # for i in range(1, nl + 1):
-        #     print('W'+str(i), self.params['W'+str(i)].shape)
+
         assert len(regularizers) == nl
         loss += self.reg * sum(regularizers)
 
@@ -313,22 +326,36 @@ class FullyConnectedNet(object):
         grads['b' + str(nl)] = db
 
         for i in reversed(range(1, nl)):  # Exclude fc layer
-            # print(i)
-            dx, dw, db = affine_relu_backward(dx, hyperparameter['W' + str(i) + "_cache"])
-            grads['W' + str(i)] = dw + self.reg * self.params['W' + str(i)]
-            grads['b' + str(i)] = db
-        # exit(0)
-
-        # print("Grads")
-        # for k, v in grads.items():
-        #     if isinstance(v, np.ndarray):
-        #         print(k, v.shape)
-        #     else:
-        #         print(k)
-        # exit(0)
+            if self.use_batchnorm:
+                dx, dw, db, dgamma, dbeta = affine_bn_relu_backward(dx, hyperparameter['W' + str(i) +
+                                                                                       "_cache"])
+                grads['W' + str(i)] = dw + self.reg * self.params['W' + str(i)]
+                grads['b' + str(i)] = db
+                grads['gamma' + str(i)] = dgamma
+                grads['beta' + str(i)] = dbeta
+            else:
+                dx, dw, db = affine_relu_backward(dx, hyperparameter['W' + str(i) + "_cache"])
+                grads['W' + str(i)] = dw + self.reg * self.params['W' + str(i)]
+                grads['b' + str(i)] = db
 
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
 
         return loss, grads
+
+
+def affine_bn_relu_forward(x, w, b, gamma, beta, bn_param):
+    a, fc_cache = affine_forward(x, w, b)
+    bn, bn_cache = batchnorm_forward(a, gamma, beta, bn_param)
+    out, relu_cache = relu_forward(bn)
+    cache = (fc_cache, bn_cache, relu_cache)
+    return out, cache
+
+
+def affine_bn_relu_backward(dout, cache):
+    fc_cache, bn_cache, relu_cache = cache
+    dbn = relu_backward(dout, relu_cache)
+    da, dgamma, dbeta = batchnorm_backward(dbn, bn_cache)
+    dx, dw, db = affine_backward(da, fc_cache)
+    return dx, dw, db, dgamma, dbeta
