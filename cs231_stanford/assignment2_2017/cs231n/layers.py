@@ -179,12 +179,14 @@ def batchnorm_forward(x, gamma, beta, bn_param):
         #######################################################################
         cache = {}
 
-        sample_mean = np.mean(x)
-        sample_var = np.var(x)
+        sample_mean = np.mean(x, axis=0)
+        sample_var = np.var(x, axis=0)
         running_mean = momentum * running_mean + (1 - momentum) * sample_mean
         running_var = momentum * running_var + (1 - momentum) * sample_var
         x_hat = (x - sample_mean) / np.sqrt(sample_var + eps)  # Normalize
         out = gamma * x_hat + beta
+        # print(out.shape)
+        # print("1", out[-1:])
 
         cache['mu'] = sample_mean
         cache['sigma'] = sample_var
@@ -241,33 +243,34 @@ def batchnorm_backward(dout, cache):
     # results in the dx, dgamma, and dbeta variables.                         #
     ###########################################################################
     N, D = dout.shape
+    c = cache
 
-    dx_hat = dout * cache['gamma']  # (N, D)
-    dsigma = dx_hat * (cache['x'] - cache['mu']) * \
-             (-1 / 2) * (cache['sigma'] + cache['eps']) ** (-3 / 2)  # (N, D)
+    dx_hat = dout * c['gamma']  # (N, D)
+
+    dsigma = dx_hat * (c['x'] - c['mu']) * (-1 / 2) * (c['sigma'] + c['eps']) ** (-3 / 2)  # (N, D)
     dsigma = np.ones(N).dot(dsigma)  # (D,)
 
-    dmu_1 = dx_hat * (-1 / math.sqrt(cache['sigma'] + cache['eps']))
-    dmu_2 = -2 * (cache['x'] - cache['mu'])
-    dmu = np.ones(N).dot(dmu_1) + \
-          dsigma * np.ones(N).dot(dmu_2) / N
+    dmu_1 = dx_hat * (-1 / math.sqrt(c['sigma'] + c['eps']))
+    dmu_2 = -2 * (c['x'] - c['mu'])
+    dmu = np.ones(N).dot(dmu_1) + dsigma * np.ones(N).dot(dmu_2) / N
+    dmu = dmu
 
-    print("dsigma:",  dsigma.shape)
-    print("dmu:",  dmu.shape)
-    test = dx_hat * 1 / math.sqrt(cache['sigma'] + cache['eps'])
-    test1 = 2 * (cache['x'] - cache['mu']) / N * dsigma
+    print("dsigma:", dsigma.shape)
+    print("dmu:", dmu.shape)
+    test = dx_hat * 1 / math.sqrt(c['sigma'] + c['eps'])
+    test1 = 2 * (c['x'] - c['mu']) / N * dsigma
     test2 = dmu / N
     print("test", test.shape)
     print("test1", test1.shape)
     print("test2", test2.shape)
 
-    # dx = dx_hat * 1 / math.sqrt(cache['sigma'] + cache['eps']) + \
-    #      (2 * (cache['x'] - cache['mu']) / N).dot(dsigma) + dmu / N
-    dx = dx_hat * 1 / math.sqrt(cache['sigma'] + cache['eps']) + \
-         2 * (cache['x'] - cache['mu']) / N * dsigma + dmu / N
+    # dx = dx_hat * 1 / math.sqrt(c['sigma'] + c['eps']) + \
+    #      (2 * (c['x'] - c['mu']) / N).dot(dsigma) + dmu / N
+    dx = dx_hat * 1 / math.sqrt(c['sigma'] + c['eps']) + \
+         2 * (c['x'] - c['mu']) / N * dsigma + dmu / N
 
     dbeta = np.ones(N).dot(dout)
-    dgamma = np.ones(N).dot(dout * cache['x_hat'])
+    dgamma = np.ones(N).dot(dout * c['x_hat'])
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -301,6 +304,96 @@ def batchnorm_backward_alt(dout, cache):
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
+
+    return dx, dgamma, dbeta
+
+
+def batchnorm_forward_2(x, gamma, beta, bn_param):
+    mode = bn_param['mode']
+    eps = bn_param.get('eps', 1e-5)
+    momentum = bn_param.get('momentum', 0.9)
+
+    N, D = x.shape
+
+    # step1: calculate mean
+    mu = 1. / N * np.sum(x, axis=0)
+
+    # step2: subtract mean vector of every trainings example
+    xmu = x - mu
+
+    # step3: following the lower branch - calculation denominator
+    sq = xmu ** 2
+
+    # step4: calculate variance
+    var = 1. / N * np.sum(sq, axis=0)
+
+    # step5: add eps for numerical stability, then sqrt
+    sqrtvar = np.sqrt(var + eps)
+
+    # step6: invert sqrtwar
+    ivar = 1. / sqrtvar
+
+    # step7: execute normalization
+    xhat = xmu * ivar
+
+    # step8: Nor the two transformation steps
+    gammax = gamma * xhat
+
+    # step9
+    out = gammax + beta
+    # print(out.shape)
+    # print("2", out[-1:])
+
+    # store intermediate
+    cache = (xhat, gamma, xmu, ivar, sqrtvar, var, eps)
+
+    return out, cache
+
+
+def batchnorm_backward_2(dout, cache):
+    # unfold the variables stored in cache
+    sqrtvar = np.sqrt(cache['sigma'] + cache['eps'])
+    ivar = 1. / sqrtvar
+    cache = (cache['x_hat'], cache['gamma'], cache['mu'], cache['sigma'], cache['eps'])
+    xhat, gamma, xmu, var, eps = cache
+    # xhat,gamma,xmu,ivar,sqrtvar,var,eps = cache
+
+    # get the dimensions of the input/output
+    N, D = dout.shape
+
+    # step9
+    dbeta = np.sum(dout, axis=0)
+    dgammax = dout  # not necessary, but more understandable
+
+    # step8
+    dgamma = np.sum(dgammax * xhat, axis=0)
+    dxhat = dgammax * gamma
+
+    # step7
+    divar = np.sum(dxhat * xmu, axis=0)
+    dxmu1 = dxhat * ivar
+
+    # step6
+    dsqrtvar = -1. / (sqrtvar ** 2) * divar
+
+    # step5
+    dvar = 0.5 * 1. / np.sqrt(var + eps) * dsqrtvar
+
+    # step4
+    dsq = 1. / N * np.ones((N, D)) * dvar
+
+    # step3
+    dxmu2 = 2 * xmu * dsq
+
+    # step2
+    dx1 = (dxmu1 + dxmu2)
+    dmu = -1 * np.sum(dxmu1 + dxmu2, axis=0)
+
+    # step1
+    dx2 = 1. / N * np.ones((N, D)) * dmu
+
+    # step0
+    dx = dx1 + dx2
 
     return dx, dgamma, dbeta
 
