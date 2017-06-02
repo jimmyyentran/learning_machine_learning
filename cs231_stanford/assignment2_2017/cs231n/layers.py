@@ -250,24 +250,12 @@ def batchnorm_backward(dout, cache):
     dsigma = dx_hat * (c['x'] - c['mu']) * (-1 / 2) * (c['sigma'] + c['eps']) ** (-3 / 2)  # (N, D)
     dsigma = np.ones(N).dot(dsigma)  # (D,)
 
-    dmu_1 = dx_hat * (-1 / math.sqrt(c['sigma'] + c['eps']))
+    dmu_1 = dx_hat * (-1 / np.sqrt(c['sigma'] + c['eps']))
     dmu_2 = -2 * (c['x'] - c['mu'])
     dmu = np.ones(N).dot(dmu_1) + dsigma * np.ones(N).dot(dmu_2) / N
     dmu = dmu
 
-    print("dsigma:", dsigma.shape)
-    print("dmu:", dmu.shape)
-    test = dx_hat * 1 / math.sqrt(c['sigma'] + c['eps'])
-    test1 = 2 * (c['x'] - c['mu']) / N * dsigma
-    test2 = dmu / N
-    print("test", test.shape)
-    print("test1", test1.shape)
-    print("test2", test2.shape)
-
-    # dx = dx_hat * 1 / math.sqrt(c['sigma'] + c['eps']) + \
-    #      (2 * (c['x'] - c['mu']) / N).dot(dsigma) + dmu / N
-    dx = dx_hat * 1 / math.sqrt(c['sigma'] + c['eps']) + \
-         2 * (c['x'] - c['mu']) / N * dsigma + dmu / N
+    dx = dx_hat * 1 / np.sqrt(c['sigma'] + c['eps']) + 2 * (c['x'] - c['mu']) / N * dsigma + dmu / N
 
     dbeta = np.ones(N).dot(dout)
     dgamma = np.ones(N).dot(dout * c['x_hat'])
