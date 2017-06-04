@@ -188,13 +188,10 @@ class FullyConnectedNet(object):
             self.params['W' + str(i + 1)] = np.random.normal(0, weight_scale,
                                                              [total_dims[i], total_dims[i + 1]])
             self.params['b' + str(i + 1)] = np.zeros(total_dims[i + 1])
+
             if use_batchnorm:
                 self.params['gamma' + str(i + 1)] = np.ones(total_dims[i + 1])
                 self.params['beta' + str(i + 1)] = np.zeros(total_dims[i + 1])
-            # print(self.params['gamma' + str(i + 1)].shape)
-            # print(str(i), total_dims[i], str(i + 1), total_dims[i + 1])
-            # print("W" + str(i + 1) + " Shape: ", total_dims[i], total_dims[i + 1],
-            #       np.sum(self.params['W' + str(i+1)]))
 
         # We don't batch normalize the last layer
         self.params.pop('gamma' + str(len(total_dims) - 1), None)
@@ -257,6 +254,7 @@ class FullyConnectedNet(object):
         ############################################################################
         hyperparameter = {'W0_act': X}  # Inputs mimic activation layer
         nl = self.num_layers  # Alias
+        dropout_cache = ['0']  # Zero index
         for i in range(1, nl):  # Without fully connected layer
             if self.use_batchnorm:
                 fwd = affine_bn_relu_forward(hyperparameter['W' + str(i - 1) + "_act"],
@@ -269,6 +267,12 @@ class FullyConnectedNet(object):
                 fwd = affine_relu_forward(hyperparameter['W' + str(i - 1) + "_act"],
                                           self.params['W' + str(i)],
                                           self.params['b' + str(i)])
+
+            if self.use_dropout:
+                dropout, cache = dropout_forward(fwd[0], self.dropout_param)
+                dropout_cache.append(cache)
+                fwd = (dropout, fwd[1])
+
             hyperparameter['W' + str(i) + "_act"], hyperparameter['W' + str(i) + "_cache"] = fwd
 
         # Only forward pass fully connected layer
@@ -326,6 +330,9 @@ class FullyConnectedNet(object):
         grads['b' + str(nl)] = db
 
         for i in reversed(range(1, nl)):  # Exclude fc layer
+            if self.use_dropout:
+                dx = dropout_backward(dx, dropout_cache[i])
+
             if self.use_batchnorm:
                 dx, dw, db, dgamma, dbeta = affine_bn_relu_backward(dx, hyperparameter['W' + str(i) +
                                                                                        "_cache"])
@@ -337,6 +344,7 @@ class FullyConnectedNet(object):
                 dx, dw, db = affine_relu_backward(dx, hyperparameter['W' + str(i) + "_cache"])
                 grads['W' + str(i)] = dw + self.reg * self.params['W' + str(i)]
                 grads['b' + str(i)] = db
+
 
         ############################################################################
         #                             END OF YOUR CODE                             #
