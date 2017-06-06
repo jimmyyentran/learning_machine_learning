@@ -499,12 +499,21 @@ def conv_forward_naive(x, w, b, conv_param):
     if pad:
         x_pad = np.pad(x, pad, 'constant')[pad:-pad, pad:-pad]
 
-
+    outputs = []
+    H_prime = int((H - HH + 2 * pad) / stride + 1)
+    W_prime = int((W - WW + 2 * pad) / stride + 1)
     for image in x_pad:
-        # print(image)
-        for i in range(HH, H+1, stride):
-            for j in range(WW, W+1, stride):
-                print(j,i)
+        print('Image')
+        for i in range(H_prime):
+            for j in range(W_prime):
+                print("Conv")
+                for k in range(F):
+                    s = np.sum(image[:, i:i + HH, j:j + WW] * w[k] + b[k])
+                    outputs.append(s)
+                    print('Filter:', s)
+    out = np.asarray(outputs).reshape((N, F, H_prime, W_prime))
+    print(out)
+
     #     print(image[])
     #     print(np.pad(x, 0, pad)[pad:-pad].shape)
     #     for i in range(H):
