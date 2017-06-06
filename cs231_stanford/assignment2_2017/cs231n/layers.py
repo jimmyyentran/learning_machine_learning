@@ -344,7 +344,7 @@ def batchnorm_backward_2(dout, cache):
     # ivar = 1. / sqrtvar
     # cache = (cache['x_hat'], cache['gamma'], cache['mu'], cache['sigma'], cache['eps'])
     # xhat, gamma, xmu, var, eps = cache
-    xhat,gamma,xmu,ivar,sqrtvar,var,eps = cache
+    xhat, gamma, xmu, ivar, sqrtvar, var, eps = cache
 
     # get the dimensions of the input/output
     N, D = dout.shape
@@ -490,7 +490,25 @@ def conv_forward_naive(x, w, b, conv_param):
     # TODO: Implement the convolutional forward pass.                         #
     # Hint: you can use the function np.pad for padding.                      #
     ###########################################################################
-    pass
+    N, C, H, W = x.shape
+    F, CC, HH, WW = w.shape
+    stride, pad = (conv_param['stride'], conv_param['pad'])
+    x_pad = x
+
+    # pad and remove the head and tail pads of 2 & 3 axis
+    if pad:
+        x_pad = np.pad(x, pad, 'constant')[pad:-pad, pad:-pad]
+
+
+    for image in x_pad:
+        # print(image)
+        for i in range(HH, H+1, stride):
+            for j in range(WW, W+1, stride):
+                print(j,i)
+    #     print(image[])
+    #     print(np.pad(x, 0, pad)[pad:-pad].shape)
+    #     for i in range(H):
+    #         print()
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################

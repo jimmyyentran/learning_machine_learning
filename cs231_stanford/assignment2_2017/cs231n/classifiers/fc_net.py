@@ -281,19 +281,6 @@ class FullyConnectedNet(object):
                              self.params['b' + str(nl)])
         hyperparameter['W' + str(nl) + '_act'], hyperparameter['W' + str(nl) + "_cache"] = fwd
 
-        # print("Params")
-        # for k, v in self.params.items():
-        #     if isinstance(v, np.ndarray):
-        #         print(k, v.shape)
-        #     else:
-        #         print(k)
-        # print("Hyperparams")
-        # for k, v in hyperparameter.items():
-        #     if isinstance(v, np.ndarray):
-        #         print(k, v.shape)
-        #     else:
-        #         print(k)
-
         scores = hyperparameter['W' + str(nl) + '_act']
         ############################################################################
         #                             END OF YOUR CODE                             #
