@@ -494,25 +494,32 @@ def conv_forward_naive(x, w, b, conv_param):
     F, CC, HH, WW = w.shape
     stride, pad = (conv_param['stride'], conv_param['pad'])
     x_pad = x
+    H_prime = int((H - HH + 2 * pad) / stride + 1)
+    W_prime = int((W - WW + 2 * pad) / stride + 1)
+    out = np.zeros((N, F, H_prime, W_prime))
 
     # pad and remove the head and tail pads of 2 & 3 axis
     if pad:
         x_pad = np.pad(x, pad, 'constant')[pad:-pad, pad:-pad]
 
     outputs = []
-    H_prime = int((H - HH + 2 * pad) / stride + 1)
-    W_prime = int((W - WW + 2 * pad) / stride + 1)
-    for image in x_pad:
+    for idx, image in enumerate(x_pad):
         print('Image')
-        for i in range(H_prime):
-            for j in range(W_prime):
-                print("Conv")
-                for k in range(F):
-                    s = np.sum(image[:, i:i + HH, j:j + WW] * w[k] + b[k])
-                    outputs.append(s)
+        for i in range(H_prime):  # Traverse verticalLy
+            h = i * stride
+            for j in range(W_prime):  # Traverse horizontally
+                wi = j * stride
+                print("Conv (%d, %d) - (%d, %d)" % (h, wi, h + HH, wi + WW))
+                for f in range(F):
+                    print(image[:, h:h + HH, wi:wi + WW])
+                    s = np.sum(image[:, h:h + HH, wi:wi + WW] * w[f] + b[f])
+                    # s = np.sum(image[:, i:i + HH, :WW] * w[k] + b[k])
+                    # outputs.append(s)
+                    out[idx, f, i, j] = s
                     print('Filter:', s)
-    out = np.asarray(outputs).reshape((N, F, H_prime, W_prime))
     print(out)
+    # out = np.asarray(outputs).reshape((N, F, H_prime, W_prime))
+    # print(out)
 
     #     print(image[])
     #     print(np.pad(x, 0, pad)[pad:-pad].shape)
