@@ -504,27 +504,18 @@ def conv_forward_naive(x, w, b, conv_param):
 
     outputs = []
     for idx, image in enumerate(x_pad):
-        print('Image')
+        # print('Image')
         for i in range(H_prime):  # Traverse verticalLy
             h = i * stride
             for j in range(W_prime):  # Traverse horizontally
                 wi = j * stride
-                print("Conv (%d, %d) - (%d, %d)" % (h, wi, h + HH, wi + WW))
+                # print("Conv (%d, %d) - (%d, %d)" % (h, wi, h + HH, wi + WW))
+                # print(image[:, h:h + HH, wi:wi + WW])
                 for f in range(F):
-                    print(image[:, h:h + HH, wi:wi + WW])
-                    s = np.sum(image[:, h:h + HH, wi:wi + WW] * w[f] + b[f])
-                    # s = np.sum(image[:, i:i + HH, :WW] * w[k] + b[k])
-                    # outputs.append(s)
+                    s = np.sum(image[:, h:h + HH, wi:wi + WW] * w[f]) + b[f]
                     out[idx, f, i, j] = s
-                    print('Filter:', s)
-    print(out)
-    # out = np.asarray(outputs).reshape((N, F, H_prime, W_prime))
+                    # print('Filter:', s)
     # print(out)
-
-    #     print(image[])
-    #     print(np.pad(x, 0, pad)[pad:-pad].shape)
-    #     for i in range(H):
-    #         print()
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
