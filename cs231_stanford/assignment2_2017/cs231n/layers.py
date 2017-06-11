@@ -511,10 +511,24 @@ def conv_forward_naive(x, w, b, conv_param):
                 wi = j * stride
                 # print("Conv (%d, %d) - (%d, %d)" % (h, wi, h + HH, wi + WW))
                 # print(image[:, h:h + HH, wi:wi + WW])
-                for f in range(F):
-                    s = np.sum(image[:, h:h + HH, wi:wi + WW] * w[f]) + b[f]
-                    out[idx, f, i, j] = s
+                print("Image", image.shape)
+                print("w", w.shape)
+                print("b", b.shape)
+                # print("In F")
+                # for f in range(F):
+                #     print("image", image[:, h:h + HH, wi:wi + WW].shape)
+                #     print("w", w[f].shape)
+                #     print("b", b[f])
+                #     lkjsf
+                #     s = np.sum(image[:, h:h + HH, wi:wi + WW] * w[f]) + b[f]
+                #     out[idx, f, i, j] = s
                     # print('Filter:', s)
+                # s = np.sum(image[:, h:h + HH, wi:wi + WW] * w) + b
+                # print(s.shape)
+                s = image[:, h:h + HH, wi:wi + WW] * w
+                print(s)
+                print(s.shape)
+                out[idx, f, i, j] = s
     # print(out)
     ###########################################################################
     #                             END OF YOUR CODE                            #
@@ -540,7 +554,7 @@ def conv_backward_naive(dout, cache):
     ###########################################################################
     # TODO: Implement the convolutional backward pass.                        #
     ###########################################################################
-    pass
+
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
