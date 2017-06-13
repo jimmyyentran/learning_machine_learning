@@ -497,6 +497,7 @@ def conv_forward_naive(x, w, b, conv_param):
     H_prime = int((H - HH + 2 * pad) / stride + 1)
     W_prime = int((W - WW + 2 * pad) / stride + 1)
     out = np.zeros((N, F, H_prime, W_prime))
+    outLoop = np.zeros((N, F, H_prime, W_prime))
 
     # pad and remove the head and tail pads of 2 & 3 axis
     if pad:
@@ -509,26 +510,18 @@ def conv_forward_naive(x, w, b, conv_param):
             h = i * stride
             for j in range(W_prime):  # Traverse horizontally
                 wi = j * stride
-                # print("Conv (%d, %d) - (%d, %d)" % (h, wi, h + HH, wi + WW))
-                # print(image[:, h:h + HH, wi:wi + WW])
-                print("Image", image.shape)
-                print("w", w.shape)
-                print("b", b.shape)
-                # print("In F")
-                # for f in range(F):
-                #     print("image", image[:, h:h + HH, wi:wi + WW].shape)
-                #     print("w", w[f].shape)
-                #     print("b", b[f])
-                #     lkjsf
-                #     s = np.sum(image[:, h:h + HH, wi:wi + WW] * w[f]) + b[f]
-                #     out[idx, f, i, j] = s
-                    # print('Filter:', s)
-                # s = np.sum(image[:, h:h + HH, wi:wi + WW] * w) + b
-                # print(s.shape)
-                s = image[:, h:h + HH, wi:wi + WW] * w
-                print(s)
-                print(s.shape)
-                out[idx, f, i, j] = s
+                # print("Image", image.shape)
+                # print("w", w.shape)
+                # print("b", b.shape)
+                """
+                # loop implementation
+                for f in range(F):
+                    s = np.sum(image[:, h:h + HH, wi:wi + WW] * w[f]) + b[f]
+                    outLoop[idx, f, i, j] = s
+                """
+                s = np.sum(image[:, h:h + HH, wi:wi + WW] * w, axis=tuple(range(1, w.ndim))) + b
+                out[idx, :, i, j] = s
+
     # print(out)
     ###########################################################################
     #                             END OF YOUR CODE                            #
