@@ -517,6 +517,7 @@ def conv_forward_naive(x, w, b, conv_param):
                     s = np.sum(image[:, h:h + HH, wi:wi + WW] * w[f]) + b[f]
                     outLoop[idx, f, i, j] = s
                 """
+                # print(image[:, h:h + HH, wi:wi + WW].shape)
                 # print(image[:, h:h + HH, wi:wi + WW] * w)
                 # print((image[:, h:h + HH, wi:wi + WW] * w).shape)
                 s = np.sum(image[:, h:h + HH, wi:wi + WW] * w, axis=tuple(range(1, w.ndim))) + b
@@ -529,14 +530,17 @@ def conv_forward_naive(x, w, b, conv_param):
         h = i * stride
         for j in range(W_prime):  # Traverse horizontally
             wi = j * stride
-            # print("Vectorize")
+            print("Vectorize")
             k = x_pad[:, :, h:h + HH, wi:wi + WW] * w
-            # print(k)
-            # print(k.shape)
+            print(k)
+            print(k.shape)
             k = np.sum(x_pad[:, :, h:h + HH, wi:wi + WW] * w, axis=tuple(range(1, w.ndim))) + b
-            # print(k)
-            # print(k.shape)
+            print(k)
+            print(k.shape)
             outV[:, :, i, j] = k
+
+    print(out)
+    print(outV)
     """
     ###########################################################################
     #                             END OF YOUR CODE                            #
@@ -552,6 +556,10 @@ def conv_backward_naive(dout, cache):
     Inputs:
     - dout: Upstream derivatives.
     - cache: A tuple of (x, w, b, conv_param) as in conv_forward_naive
+        - conv_param: A dictionary with the following keys:
+            - 'stride': The number of pixels between adjacent receptive fields in the
+            horizontal and vertical directions.
+            - 'pad': The number of pixels that will be used to zero-pad the input.
 
     Returns a tuple of:
     - dx: Gradient with respect to x
@@ -562,6 +570,23 @@ def conv_backward_naive(dout, cache):
     ###########################################################################
     # TODO: Implement the convolutional backward pass.                        #
     ###########################################################################
+
+    # Initialize parameters
+    x, w, b, conv_param = cache
+    N, C, H, W = x.shape
+    F, CC, HH, WW = w.shape
+    stride, pad = (conv_param['stride'], conv_param['pad'])
+    H_prime = int((H - HH + 2 * pad) / stride + 1)
+    W_prime = int((W - WW + 2 * pad) / stride + 1)
+
+
+    # for idx, image in enumerate(x_pad):
+    #     for i in range(H_prime):  # Traverse verticalLy
+    #         h = i * stride
+    #         for j in range(W_prime):  # Traverse horizontally
+    #             wi = j * stride
+
+
 
     ###########################################################################
     #                             END OF YOUR CODE                            #
