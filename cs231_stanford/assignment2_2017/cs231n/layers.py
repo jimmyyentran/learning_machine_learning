@@ -579,12 +579,31 @@ def conv_backward_naive(dout, cache):
     H_prime = int((H - HH + 2 * pad) / stride + 1)
     W_prime = int((W - WW + 2 * pad) / stride + 1)
 
+    db = np.zeros(b.shape)
+    # pad and remove the head and tail pads of 2 & 3 axis
+    # if pad:
+    #     x_pad = np.pad(x, pad, 'constant')[pad:-pad, pad:-pad]
 
-    # for idx, image in enumerate(x_pad):
+    # for idx, dout in enumerate(x_pad):
     #     for i in range(H_prime):  # Traverse verticalLy
     #         h = i * stride
     #         for j in range(W_prime):  # Traverse horizontally
     #             wi = j * stride
+    #
+    #             dout[:, h:h + HH, wi:wi + WW] * w, axis=tuple(range(1, w.ndim))) + b
+    #             db +=
+    print("dout.shape N:%d F:%d H:%d W:%d" % dout.shape)
+
+    for i in range(dout.shape[0]):
+        print()
+        for j in range(dout.shape[1]):
+            print(dout[i,j].shape)
+
+            grid_sum = np.sum(dout[i,j])  # take sum of our partial derivatives
+            db[j] += grid_sum
+            dsummation = dout
+            # dw +=
+
 
 
 
