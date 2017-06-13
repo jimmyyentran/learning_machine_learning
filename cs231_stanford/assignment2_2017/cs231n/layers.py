@@ -497,15 +497,13 @@ def conv_forward_naive(x, w, b, conv_param):
     H_prime = int((H - HH + 2 * pad) / stride + 1)
     W_prime = int((W - WW + 2 * pad) / stride + 1)
     out = np.zeros((N, F, H_prime, W_prime))
-    outLoop = np.zeros((N, F, H_prime, W_prime))
+    outV = np.zeros((N, F, H_prime, W_prime))
 
     # pad and remove the head and tail pads of 2 & 3 axis
     if pad:
         x_pad = np.pad(x, pad, 'constant')[pad:-pad, pad:-pad]
 
-    outputs = []
     for idx, image in enumerate(x_pad):
-        # print('Image')
         for i in range(H_prime):  # Traverse verticalLy
             h = i * stride
             for j in range(W_prime):  # Traverse horizontally
@@ -519,10 +517,27 @@ def conv_forward_naive(x, w, b, conv_param):
                     s = np.sum(image[:, h:h + HH, wi:wi + WW] * w[f]) + b[f]
                     outLoop[idx, f, i, j] = s
                 """
+                # print(image[:, h:h + HH, wi:wi + WW] * w)
+                # print((image[:, h:h + HH, wi:wi + WW] * w).shape)
                 s = np.sum(image[:, h:h + HH, wi:wi + WW] * w, axis=tuple(range(1, w.ndim))) + b
+                # print(s)
                 out[idx, :, i, j] = s
 
-    # print(out)
+    """
+    # Vectorize image loop
+    for i in range(H_prime):  # Traverse verticalLy
+        h = i * stride
+        for j in range(W_prime):  # Traverse horizontally
+            wi = j * stride
+            # print("Vectorize")
+            k = x_pad[:, :, h:h + HH, wi:wi + WW] * w
+            # print(k)
+            # print(k.shape)
+            k = np.sum(x_pad[:, :, h:h + HH, wi:wi + WW] * w, axis=tuple(range(1, w.ndim))) + b
+            # print(k)
+            # print(k.shape)
+            outV[:, :, i, j] = k
+    """
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
