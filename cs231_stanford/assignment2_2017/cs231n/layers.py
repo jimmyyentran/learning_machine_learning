@@ -573,11 +573,13 @@ def conv_backward_naive(dout, cache):
 
     # Initialize parameters
     x, w, b, conv_param = cache
-    N, C, H, W = x.shape
-    F, CC, HH, WW = w.shape
+    # N, C, H, W = x.shape
+    # F, CC, HH, WW = w.shape
+    N, F, H, W = dout.shape
+
     stride, pad = (conv_param['stride'], conv_param['pad'])
-    H_prime = int((H - HH + 2 * pad) / stride + 1)
-    W_prime = int((W - WW + 2 * pad) / stride + 1)
+    # H_prime = int((H - HH + 2 * pad) / stride + 1)
+    # W_prime = int((W - WW + 2 * pad) / stride + 1)
 
     db = np.zeros(b.shape)
     # pad and remove the head and tail pads of 2 & 3 axis
@@ -595,20 +597,40 @@ def conv_backward_naive(dout, cache):
     print("dout.shape N:%d F:%d H:%d W:%d" % dout.shape)
 
     """
-    for i in range(dout.shape[0]):
-        print()
-        for j in range(dout.shape[1]):
-            print(dout[i,j].shape)
-
-            grid_sum = np.sum(dout[i,j])  # take sum of our partial derivatives
-            db[j] += grid_sum
-            dsummation = dout
-            # dw +=
+    Implementation 1. Loop over filters of each image
+        - bad since local connectivity not taken into account
     """
-    for idx, image in enumerate(dout):
-        for i in range(dout.shape[2]):
-            for j in range(dout.shape[3]):
-                db += image[:, i, j]
+    # for i in range(dout.shape[0]):
+    #     print()
+    #     for j in range(dout.shape[1]):
+    #         print(dout[i,j].shape)
+    #
+    #         grid_sum = np.sum(dout[i,j])  # take sum of our partial derivatives
+    #         db[j] += grid_sum
+    #         dsummation = dout
+    #         # dw +=
+
+    """
+    Implementation 2. Loop over image
+        - ok but need to loop over images
+    """
+    # for idx, image in enumerate(dout):
+    #     for i in range(dout.shape[2]):
+    #         for j in range(dout.shape[3]):
+    #             db += image[:, i, j]
+    #             # dsum = 1 / (H * W) * np.ones((H, W))
+    #             dsum = image[:, i, j] / (H * W)
+
+    """
+    Implementation 3. Shift frame
+        - best approach but hard...
+    """
+    for i in range(dout.shape[2]):
+        for j in range(dout.shape[3]):
+            db += np.sum(dout[:, :, i, j], axis=0)
+            # dsum = 1 / (H * W) * np.ones((H, W))
+            # dsum = dout[:, i, j] / (H * W)
+
 
 
 
