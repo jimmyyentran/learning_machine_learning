@@ -575,6 +575,7 @@ def conv_backward_naive(dout, cache):
     x, w, b, conv_param = cache
     N, C, H, W = x.shape
     F, CC, HH, WW = w.shape
+    x_pad = x
     # N, F, H, W = dout.shape
 
     stride, pad = (conv_param['stride'], conv_param['pad'])
@@ -583,9 +584,10 @@ def conv_backward_naive(dout, cache):
 
     db = np.zeros(b.shape)
     dw = np.zeros(w.shape)
+    dx = np.zeros(x.shape)
     # pad and remove the head and tail pads of 2 & 3 axis
-    # if pad:
-    #     x_pad = np.pad(x, pad, 'constant')[pad:-pad, pad:-pad]
+    if pad:
+        x_pad = np.pad(x, pad, 'constant')[pad:-pad, pad:-pad]
 
     # for idx, dout in enumerate(x_pad):
     #     for i in range(H_prime):  # Traverse verticalLy
@@ -617,21 +619,40 @@ def conv_backward_naive(dout, cache):
     Implementation 2. Loop over image
         - ok but need to loop over images
     """
-    p = 1  # print times
+    p = 0  # print times
     for idx, image in enumerate(dout):
         for i in range(H):
             for j in range(W):
                 db += image[:, i, j]
-                dsum = 1 / (H * W * C) * np.ones((WW, HH, CC, F)) * image[:, i, j]  # Reverse order
-                # np.ones
-                dsum = dsum.reshape((F, CC, HH, WW))  # Reformat the matrix
 
-                if p > 0: print("dsum:", dsum.shape)
-                if p > 0: print(dsum)
+                if p < 1: print("Gradient dout to filters", image[:, i, j])
+                if p < 1: print("Divide by", H * W * C)
 
-                dw += x[idx, :, -3:, -3:] * dsum
+                dsum = 1 / (H * W * C) * np.ones((F, CC, HH, WW)) * image[:, i, j][:, np.newaxis,
+                                                                    np.newaxis, np.newaxis]
 
-                p -= 1
+                if p < 1: print("dsum.shape", dsum.shape)
+                if p < 1: print("Before dsum")
+                if p < 1: print(1 / (H * W * C) * np.ones((WW, HH, CC, F)))
+                if p < 1: print("After dsum")
+                if p < 1: print(dsum)
+
+                h = i * stride
+                wi = j * stride
+
+                # if p < H * W: print("(%d, %d), (%d, %d)" % (h, wi, h + HH, wi + WW))
+
+                # s = np.sum(image[:, h:h + HH, wi:wi + WW] * w, axis=tuple(range(1, w.ndim))) + b
+                dw += x_pad[idx, :, h:h + HH, wi:wi + WW] * dsum
+                # dx += x_pad[idx, :, h:h + HH, wi:wi + WW] * dsum
+
+                if p == 8: print(dw)
+
+                # if p > 0: print(x_pad[idx, :, h:h + HH, wi:wi + WW] * dsum)
+                # print(x_pad[idx, :, h:h + HH, wi:wi + WW] * dsum)
+
+                p += 1
+    print(dw)
 
     """
     Implementation 3. Shift frame
