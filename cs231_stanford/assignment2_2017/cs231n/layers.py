@@ -594,6 +594,7 @@ def conv_backward_naive(dout, cache):
     #             db +=
     print("dout.shape N:%d F:%d H:%d W:%d" % dout.shape)
 
+    """
     for i in range(dout.shape[0]):
         print()
         for j in range(dout.shape[1]):
@@ -603,6 +604,11 @@ def conv_backward_naive(dout, cache):
             db[j] += grid_sum
             dsummation = dout
             # dw +=
+    """
+    for idx, image in enumerate(dout):
+        for i in range(dout.shape[2]):
+            for j in range(dout.shape[3]):
+                db += image[:, i, j]
 
 
 
