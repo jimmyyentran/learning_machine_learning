@@ -573,15 +573,16 @@ def conv_backward_naive(dout, cache):
 
     # Initialize parameters
     x, w, b, conv_param = cache
-    # N, C, H, W = x.shape
-    # F, CC, HH, WW = w.shape
-    N, F, H, W = dout.shape
+    N, C, H, W = x.shape
+    F, CC, HH, WW = w.shape
+    # N, F, H, W = dout.shape
 
     stride, pad = (conv_param['stride'], conv_param['pad'])
     # H_prime = int((H - HH + 2 * pad) / stride + 1)
     # W_prime = int((W - WW + 2 * pad) / stride + 1)
 
     db = np.zeros(b.shape)
+    dw = np.zeros(w.shape)
     # pad and remove the head and tail pads of 2 & 3 axis
     # if pad:
     #     x_pad = np.pad(x, pad, 'constant')[pad:-pad, pad:-pad]
@@ -594,6 +595,8 @@ def conv_backward_naive(dout, cache):
     #
     #             dout[:, h:h + HH, wi:wi + WW] * w, axis=tuple(range(1, w.ndim))) + b
     #             db +=
+    print("x.shape X:%d C:%d H:%d W:%d" % x.shape)
+    print("w.shape N:%d CC:%d HH:%d WW:%d" % w.shape)
     print("dout.shape N:%d F:%d H:%d W:%d" % dout.shape)
 
     """
@@ -614,26 +617,34 @@ def conv_backward_naive(dout, cache):
     Implementation 2. Loop over image
         - ok but need to loop over images
     """
-    # for idx, image in enumerate(dout):
-    #     for i in range(dout.shape[2]):
-    #         for j in range(dout.shape[3]):
-    #             db += image[:, i, j]
-    #             # dsum = 1 / (H * W) * np.ones((H, W))
-    #             dsum = image[:, i, j] / (H * W)
+    p = 1  # print times
+    for idx, image in enumerate(dout):
+        for i in range(H):
+            for j in range(W):
+                db += image[:, i, j]
+                dsum = 1 / (H * W * C) * np.ones((WW, HH, CC, F)) * image[:, i, j]  # Reverse order
+                # np.ones
+                dsum = dsum.reshape((F, CC, HH, WW))  # Reformat the matrix
+
+                if p > 0: print("dsum:", dsum.shape)
+                if p > 0: print(dsum)
+
+                dw += x[idx, :, -3:, -3:] * dsum
+
+                p -= 1
 
     """
     Implementation 3. Shift frame
         - best approach but hard...
     """
-    for i in range(dout.shape[2]):
-        for j in range(dout.shape[3]):
-            db += np.sum(dout[:, :, i, j], axis=0)
-            # dsum = 1 / (H * W) * np.ones((H, W))
-            # dsum = dout[:, i, j] / (H * W)
-
-
-
-
+    # p = True  ## print flag
+    # for i in range(dout.shape[2]):
+    #     for j in range(dout.shape[3]):
+    #         db += np.sum(dout[:, :, i, j], axis=0)  # combine every image's filter
+    #         dsum = dout / (H * W)
+    #         if p: print(dsum.shape)
+    #
+    #         p = False
 
     ###########################################################################
     #                             END OF YOUR CODE                            #
