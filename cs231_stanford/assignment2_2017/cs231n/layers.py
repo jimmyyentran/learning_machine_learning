@@ -628,7 +628,7 @@ def conv_backward_naive(dout, cache):
                 if p < 1: print("Gradient dout to filters", image[:, i, j])
                 if p < 1: print("Divide by", H * W * C)
 
-                dsum = 1 / (H * W * C) * np.ones((F, CC, HH, WW)) * image[:, i, j][:, np.newaxis,
+                dsum = np.ones((F, CC, HH, WW)) * image[:, i, j][:, np.newaxis,
                                                                     np.newaxis, np.newaxis]
 
                 if p < 1: print("dsum.shape", dsum.shape)
@@ -642,14 +642,12 @@ def conv_backward_naive(dout, cache):
 
                 # if p < H * W: print("(%d, %d), (%d, %d)" % (h, wi, h + HH, wi + WW))
 
-                # s = np.sum(image[:, h:h + HH, wi:wi + WW] * w, axis=tuple(range(1, w.ndim))) + b
                 dw += x_pad[idx, :, h:h + HH, wi:wi + WW] * dsum
                 # dx += x_pad[idx, :, h:h + HH, wi:wi + WW] * dsum
 
                 if p == 8: print(dw)
 
                 # if p > 0: print(x_pad[idx, :, h:h + HH, wi:wi + WW] * dsum)
-                # print(x_pad[idx, :, h:h + HH, wi:wi + WW] * dsum)
 
                 p += 1
     print(dw)
