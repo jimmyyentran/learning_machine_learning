@@ -582,7 +582,6 @@ def conv_backward_naive(dout, cache):
     if pad:
         x_pad = np.pad(x, pad, 'constant')[pad:-pad, pad:-pad]
 
-    dx = np.zeros(x.shape)
     dx_pad = np.zeros(x_pad.shape)
     dw = np.zeros(w.shape)
     db = np.zeros(b.shape)
@@ -620,7 +619,7 @@ def conv_backward_naive(dout, cache):
                 # if p < 1: print("Divide by", H * W * C)
 
                 dsum = np.ones((F, CC, HH, WW)) * image[:, i, j][:, np.newaxis,
-                                                                    np.newaxis, np.newaxis]
+                                                  np.newaxis, np.newaxis]
 
                 # if p < 1: print("dsum.shape", dsum.shape)
                 # if p < 1: print("w.shape", w.shape)
@@ -636,16 +635,16 @@ def conv_backward_naive(dout, cache):
 
                 # In padded areas, no gradient passes through since pad values are 0
                 dw += x_pad[idx, :, h:h + HH, wi:wi + WW] * dsum
-                # dx_pad[idx, :, h:h+HH, wi:wi+WW] += w * dsum
-                dx_pad[idx, :, h:h+HH, wi:wi+WW] += np.sum(w * dsum, axis=0)
+                dx_pad[idx, :, h:h + HH, wi:wi + WW] += np.sum(w * dsum, axis=0)
 
                 # if p == 8: print(dw)
 
                 # if p > 0: print(x_pad[idx, :, h:h + HH, wi:wi + WW] * dsum)
 
                 p += 1
+
     # Undo our padding from above
-    dx = dx_pad[:,:,pad:H+pad,pad:W+pad]
+    dx = dx_pad[:, :, pad:H + pad, pad:W + pad]
 
     """
     Implementation 3. Shift frame
@@ -685,7 +684,20 @@ def max_pool_forward_naive(x, pool_param):
     ###########################################################################
     # TODO: Implement the max pooling forward pass                            #
     ###########################################################################
-    pass
+    N, C, H, W = x.shape
+    ph = pool_param['pool_height']
+    pw = pool_param['pool_width']
+    stride = pool_param['stride']
+    H_prime = int((H - ph) / stride + 1)  # No padding in pool layers
+    W_prime = int((W - pw) / stride + 1)
+    out = np.zeros((N, C, ph, pw))
+    for i in range(H_prime):  # Traverse verticalLy
+        for j in range(W_prime):  # Traverse horizontally
+            h = i * stride
+            wi = j * stride
+            pool = np.max(x[:, :, h:h + ph, wi:wi + pw], axis=(2, 3))
+            # print(pool.shape)
+            out[:, :, i, j] = pool
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
