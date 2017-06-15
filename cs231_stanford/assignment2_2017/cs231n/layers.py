@@ -576,30 +576,21 @@ def conv_backward_naive(dout, cache):
     N, C, H, W = x.shape
     F, CC, HH, WW = w.shape
     x_pad = x
-    # N, F, H, W = dout.shape
-
     stride, pad = (conv_param['stride'], conv_param['pad'])
-    # H_prime = int((H - HH + 2 * pad) / stride + 1)
-    # W_prime = int((W - WW + 2 * pad) / stride + 1)
 
-    db = np.zeros(b.shape)
-    dw = np.zeros(w.shape)
-    dx = np.zeros(x.shape)
     # pad and remove the head and tail pads of 2 & 3 axis
     if pad:
         x_pad = np.pad(x, pad, 'constant')[pad:-pad, pad:-pad]
 
-    # for idx, dout in enumerate(x_pad):
-    #     for i in range(H_prime):  # Traverse verticalLy
-    #         h = i * stride
-    #         for j in range(W_prime):  # Traverse horizontally
-    #             wi = j * stride
-    #
-    #             dout[:, h:h + HH, wi:wi + WW] * w, axis=tuple(range(1, w.ndim))) + b
-    #             db +=
-    print("x.shape X:%d C:%d H:%d W:%d" % x.shape)
-    print("w.shape N:%d CC:%d HH:%d WW:%d" % w.shape)
-    print("dout.shape N:%d F:%d H:%d W:%d" % dout.shape)
+    dx = np.zeros(x.shape)
+    dx_pad = np.zeros(x_pad.shape)
+    dw = np.zeros(w.shape)
+    db = np.zeros(b.shape)
+
+    # print("x.shape N:%d C:%d H:%d W:%d" % x.shape)
+    # print("x_pad.shape N:%d C:%d H:%d W:%d" % x_pad.shape)
+    # print("w.shape F:%d CC:%d HH:%d WW:%d" % w.shape)
+    # print("dout.shape N:%d F:%d H:%d W:%d" % dout.shape)
 
     """
     Implementation 1. Loop over filters of each image
@@ -619,38 +610,42 @@ def conv_backward_naive(dout, cache):
     Implementation 2. Loop over image
         - ok but need to loop over images
     """
-    p = 0  # print times
+    p = 0  # print counter
     for idx, image in enumerate(dout):
         for i in range(H):
             for j in range(W):
                 db += image[:, i, j]
 
-                if p < 1: print("Gradient dout to filters", image[:, i, j])
-                if p < 1: print("Divide by", H * W * C)
+                # if p < 1: print("Gradient dout to filters", image[:, i, j])
+                # if p < 1: print("Divide by", H * W * C)
 
                 dsum = np.ones((F, CC, HH, WW)) * image[:, i, j][:, np.newaxis,
                                                                     np.newaxis, np.newaxis]
 
-                if p < 1: print("dsum.shape", dsum.shape)
-                if p < 1: print("Before dsum")
-                if p < 1: print(1 / (H * W * C) * np.ones((WW, HH, CC, F)))
-                if p < 1: print("After dsum")
-                if p < 1: print(dsum)
+                # if p < 1: print("dsum.shape", dsum.shape)
+                # if p < 1: print("w.shape", w.shape)
+                # if p < 1: print("Before dsum")
+                # if p < 1: print(1 / (H * W * C) * np.ones((WW, HH, CC, F)))
+                # if p < 1: print("After dsum")
+                # if p < 1: print(dsum)
 
                 h = i * stride
                 wi = j * stride
 
                 # if p < H * W: print("(%d, %d), (%d, %d)" % (h, wi, h + HH, wi + WW))
 
+                # In padded areas, no gradient passes through since pad values are 0
                 dw += x_pad[idx, :, h:h + HH, wi:wi + WW] * dsum
-                # dx += x_pad[idx, :, h:h + HH, wi:wi + WW] * dsum
+                # dx_pad[idx, :, h:h+HH, wi:wi+WW] += w * dsum
+                dx_pad[idx, :, h:h+HH, wi:wi+WW] += np.sum(w * dsum, axis=0)
 
-                if p == 8: print(dw)
+                # if p == 8: print(dw)
 
                 # if p > 0: print(x_pad[idx, :, h:h + HH, wi:wi + WW] * dsum)
 
                 p += 1
-    print(dw)
+    # Undo our padding from above
+    dx = dx_pad[:,:,pad:H+pad,pad:W+pad]
 
     """
     Implementation 3. Shift frame
