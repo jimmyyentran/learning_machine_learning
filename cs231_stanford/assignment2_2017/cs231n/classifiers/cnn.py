@@ -78,6 +78,8 @@ class ThreeLayerConvNet(object):
         self.params['W3'] = np.random.normal(0, weight_scale, [hidden_dim, num_classes])
         self.params['b3'] = np.zeros(num_classes)
 
+        # for k in self.params.keys():
+        #     print(k, self.params[k].shape)
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
@@ -138,13 +140,13 @@ class ThreeLayerConvNet(object):
         loss += self.reg * sum(regularizers)
         dx, dw, db = affine_backward(dx, cache3)
         grads['W3'] = dw + self.reg
-        grads['b3'] = dx
+        grads['b3'] = db
         dx, dw, db = affine_relu_backward(dx, cache2)
         grads['W2'] = dw + self.reg
-        grads['b2'] = dx
+        grads['b2'] = db
         dx, dw, db = conv_relu_pool_backward(dx, cache1)
         grads['W1'] = dw + self.reg
-        grads['b1'] = dx
+        grads['b1'] = db
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
