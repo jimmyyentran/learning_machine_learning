@@ -607,13 +607,19 @@ def conv_backward_naive(dout, cache):
 
     """
     Implementation 2. Loop over image
-        - ok but need to loop over images
+        - ok but need to loop over convolution activations images
     """
     p = 0  # print counter
     for idx, image in enumerate(dout):
-        for i in range(H):
-            for j in range(W):
-                db += image[:, i, j]
+        for i in range(dout.shape[2]):
+            for j in range(dout.shape[3]):
+                try:
+                    db += image[:, i, j]
+                except:
+                    print(i, j)
+                    print(H, W)
+                    print(image.shape)
+                    print(dout.shape)
 
                 # if p < 1: print("Gradient dout to filters", image[:, i, j])
                 # if p < 1: print("Divide by", H * W * C)
