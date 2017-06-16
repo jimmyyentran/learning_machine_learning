@@ -732,14 +732,66 @@ def max_pool_backward_naive(dout, cache):
     H_prime = int((H - ph) / stride + 1)  # No padding in pool layers
     W_prime = int((W - pw) / stride + 1)
     dx = np.zeros(x.shape)
+
+    print('H_prime', H_prime)
+    print('W_prime', W_prime)
+    print('dout', dout.shape)
+    print(dout)
+
+    # for idx, image in enumerate(x):
+    #     for i in range(H_prime):  # Traverse verticalLy
+    #         for j in range(W_prime):  # Traverse horizontally
+    #             h = i * stride
+    #             wi = j * stride
+    #             pool = image[:, h:h + ph, wi:wi + pw]
+    #             print(pool)
+    #             print(pool.shape)
+    # print(x[:, :, h:h + ph, wi:wi + pw])
+    # print(x[:, :, h:h + ph, wi:wi + pw].shape)
+    # pool = np.argmax(x[:, :, h:h + ph, wi:wi + pw], axis=(2, 3))
+    # print(pool)
+    # out[:, :, i, j] = pool
+
+
     for i in range(H_prime):  # Traverse verticalLy
         for j in range(W_prime):  # Traverse horizontally
             h = i * stride
             wi = j * stride
-            # pool = np.argmax(x[:, :, h:h + ph, wi:wi + pw], axis=(2, 3))
-            pool = np.argmax(x[:, :, h:h + ph, wi:wi + pw], axis=(2, 3))
-            print(pool)
-            # out[:, :, i, j] = pool
+            block = x[:, :, h:h + ph, wi:wi + pw]
+            block_flat = block.reshape(N, C, -1)
+            block_argmax = block_flat.argmax(2)
+            zeros = np.zeros(block_flat.shape)
+            zeros[np.arange(N)[:, np.newaxis], np.arange(C), block_argmax] = dout[:, :, i, j]
+            dx[:, :, h:h + ph, wi:wi + pw] += zeros.reshape(N, C, ph, pw)
+            # zeros_block = zeros[:, np.newaxis]
+            # dx[:, :, h:h + ph, wi:wi + pw] = zeros[:, np.newaxis]
+
+
+            # print('block', block.shape)
+            # print(block)
+            # print('block_flat', block_flat.shape)
+            # print(block_flat)
+            # print('block_argmax', block_argmax.shape)
+            # print(block_argmax)
+            # print('zeros', zeros.shape)
+            # print(zeros)
+            # print('zeros.reshape(N, C, ph, pw)', zeros.reshape(N, C, ph, pw).shape)
+            # print(zeros.reshape(N, C, ph, pw))
+            # print('check', x[:, :, h:h + ph, wi:wi + pw].shape)
+            # print(x[:, :, h:h + ph, wi:wi + pw])
+
+            # print(block_argmax[:,:, np.newaxis].shape)
+            # print(block_argmax[:,:, np.newaxis])
+            # print(np.zeros(block_argmax_newaxis.shape))
+            # print(block_flat[block_argmax_newaxis, np.zeros(block_argmax_newaxis.shape, dtype=int)])
+            # print(block_flat[block_argmax, np.zeros(block_argmax.shape, dtype=int)])
+            # print(block[block_argmax])
+            # print(x[:, :, h:h + ph, wi:wi + pw].shape)
+            # print(x[:, :, h:h + ph, wi:wi + pw])
+            # print(x[:, :, h:h + ph, wi:wi + pw].reshape(N, C, -1).shape)
+            # print(x[:, :, h:h + ph, wi:wi + pw].reshape(N, C, -1))
+            # print(x[:, :, h:h + ph, wi:wi + pw].reshape(N, C, -1).argmax(2).shape)
+            # print(x[:, :, h:h + ph, wi:wi + pw].reshape(N, C, -1).argmax(2))
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
