@@ -613,13 +613,7 @@ def conv_backward_naive(dout, cache):
     for idx, image in enumerate(dout):
         for i in range(dout.shape[2]):
             for j in range(dout.shape[3]):
-                try:
-                    db += image[:, i, j]
-                except:
-                    print(i, j)
-                    print(H, W)
-                    print(image.shape)
-                    print(dout.shape)
+                db += image[:, i, j]
 
                 # if p < 1: print("Gradient dout to filters", image[:, i, j])
                 # if p < 1: print("Divide by", H * W * C)
@@ -739,10 +733,10 @@ def max_pool_backward_naive(dout, cache):
     W_prime = int((W - pw) / stride + 1)
     dx = np.zeros(x.shape)
 
-    print('H_prime', H_prime)
-    print('W_prime', W_prime)
-    print('dout', dout.shape)
-    print(dout)
+    # print('H_prime', H_prime)
+    # print('W_prime', W_prime)
+    # print('dout', dout.shape)
+    # print(dout)
 
     # for idx, image in enumerate(x):
     #     for i in range(H_prime):  # Traverse verticalLy
@@ -759,8 +753,8 @@ def max_pool_backward_naive(dout, cache):
     # out[:, :, i, j] = pool
 
 
-    for i in range(H_prime):  # Traverse verticalLy
-        for j in range(W_prime):  # Traverse horizontally
+    for i in range(H_prime):
+        for j in range(W_prime):
             h = i * stride
             wi = j * stride
             block = x[:, :, h:h + ph, wi:wi + pw]
@@ -801,6 +795,32 @@ def max_pool_backward_naive(dout, cache):
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
+    return dx
+
+
+def max_pool_backward_naive_less_variables(dout, cache):
+    """
+    Removing variables make little difference
+    :param dout:
+    :param cache:
+    :return:
+    """
+    x, pool_param = cache
+    N, C, H, W = x.shape
+    ph = pool_param['pool_height']
+    pw = pool_param['pool_width']
+    stride = pool_param['stride']
+    H_prime = int((H - ph) / stride + 1)  # No padding in pool layers
+    W_prime = int((W - pw) / stride + 1)
+    dx = np.zeros(x.shape)
+    for i in range(H_prime):
+        for j in range(W_prime):
+            h = i * stride
+            wi = j * stride
+            block = x[:, :, h:h + ph, wi:wi + pw].reshape(N, C, -1).argmax(2)
+            zeros = np.zeros((N, C, ph*pw))
+            zeros[np.arange(N)[:, np.newaxis], np.arange(C), block] = dout[:, :, i, j]
+            dx[:, :, h:h + ph, wi:wi + pw] += zeros.reshape(N, C, ph, pw)
     return dx
 
 
