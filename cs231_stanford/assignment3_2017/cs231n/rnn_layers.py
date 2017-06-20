@@ -2,7 +2,6 @@ from __future__ import print_function, division
 from builtins import range
 import numpy as np
 
-
 """
 This file defines layer types that are commonly used for recurrent neural
 networks.
@@ -34,8 +33,11 @@ def rnn_step_forward(x, prev_h, Wx, Wh, b):
     # hidden state and any values you need for the backward pass in the next_h   #
     # and cache variables respectively.                                          #
     ##############################################################################
-    N, D = x.shape
-    _, H = prev_h.shape
+    x_Wx = x.dot(Wx)
+    prev_h_Wh = prev_h.dot(Wh)
+    ws = x_Wx + prev_h_Wh + b  # Weight sum
+    next_h = np.tanh(ws)
+    cache = (x_Wx, prev_h_Wh, ws)
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
