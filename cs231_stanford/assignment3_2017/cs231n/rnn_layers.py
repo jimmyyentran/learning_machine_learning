@@ -37,7 +37,7 @@ def rnn_step_forward(x, prev_h, Wx, Wh, b):
     prev_h_Wh = prev_h.dot(Wh)
     ws = x_Wx + prev_h_Wh + b  # Weight sum
     next_h = np.tanh(ws)
-    cache = (x, prev_h, Wx, Wh, next_h)
+    cache = (x, prev_h, Wx, Wh, next_h, x_Wx)
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
@@ -66,7 +66,7 @@ def rnn_step_backward(dnext_h, cache):
     # HINT: For the tanh function, you can compute the local derivative in terms #
     # of the output value from tanh.                                             #
     ##############################################################################
-    x, prev_h, Wx, Wh, next_h = cache
+    x, prev_h, Wx, Wh, next_h, _ = cache
     dtanh = dnext_h * (1 - next_h ** 2)  # (N, H)
 
     db = dtanh.sum(axis=0)  # (H,)
@@ -113,7 +113,12 @@ def rnn_forward(x, h0, Wx, Wh, b):
     # input data. You should use the rnn_step_forward function that you defined  #
     # above. You can use a for loop to help compute the forward pass.            #
     ##############################################################################
-    pass
+    N, T, D = x.shape
+    _, H = h0.shape
+    h = np.zeros((N, T, H))
+    for i in range(T):
+        h0, c = rnn_step_forward(x[:, i, :], h0, Wx, Wh, b)  # h0.shape = (N, H)
+        h[:, i, :] = h0
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
