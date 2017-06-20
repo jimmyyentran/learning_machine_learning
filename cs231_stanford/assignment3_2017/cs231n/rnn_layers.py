@@ -37,7 +37,7 @@ def rnn_step_forward(x, prev_h, Wx, Wh, b):
     prev_h_Wh = prev_h.dot(Wh)
     ws = x_Wx + prev_h_Wh + b  # Weight sum
     next_h = np.tanh(ws)
-    cache = (x, prev_h, Wx, Wh, x_Wx, prev_h_Wh, ws, next_h)
+    cache = (x, prev_h, Wx, Wh, next_h)
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
@@ -66,7 +66,7 @@ def rnn_step_backward(dnext_h, cache):
     # HINT: For the tanh function, you can compute the local derivative in terms #
     # of the output value from tanh.                                             #
     ##############################################################################
-    x, prev_h, Wx, Wh, w_Wx, prev_h_Wh, ws, next_h = cache
+    x, prev_h, Wx, Wh, next_h = cache
     dtanh = dnext_h * (1 - next_h ** 2)  # (N, H)
 
     db = dtanh.sum(axis=0)  # (H,)
