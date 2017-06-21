@@ -6,6 +6,10 @@ from cs231n.layers import *
 from cs231n.rnn_layers import *
 
 
+def debug(v):
+    print(v, '=', repr(eval(v)))
+
+
 class CaptioningRNN(object):
     """
     A CaptioningRNN produces captions from image features using a recurrent
@@ -74,7 +78,6 @@ class CaptioningRNN(object):
         for k, v in self.params.items():
             self.params[k] = v.astype(self.dtype)
 
-
     def loss(self, features, captions):
         """
         Compute training-time loss for the RNN. We input image features and
@@ -137,13 +140,39 @@ class CaptioningRNN(object):
         # defined above to store loss and gradients; grads[k] should give the      #
         # gradients for self.params[k].                                            #
         ############################################################################
-        pass
+        # print('captions %s\n%s\n' % (captions.shape, captions))  # (N, T)
+        # print('captions_in\n%s\n' % captions_in)
+        # print('captions_out\n%s\n' % captions_out)
+        # print('mask\n%s\n' % mask)
+        # print('features %s\n%s\n' % (features.shape, features))  # (N, D)
+        # print('W_proj (%s %s)\n' % W_proj.shape)  # (D, H)
+        # print('W_embed (%s %s)\n' % W_embed.shape)  # (V, W)
+        # print('W_vocab (%s %s)\n' % W_vocab.shape)  # (H, V)
+
+        # (1) Affine transformation
+        h0, _ = affine_forward(features, W_proj, b_proj)  # (N, H)
+        # print('h0 (%s %s)\n' % h0.shape)
+
+        # (2) Word embedding layer
+        x, x_cache = word_embedding_forward(captions_in, W_embed)  # (N, T, W)
+
+        # (3) Hidden states
+        if self.cell_type == 'rnn':
+            forward, _ = rnn_forward(x, h0, Wx, Wh, b)  # (N, T, H)
+            # print('forward', forward.shape)  # (N, T, H)
+
+        # (4) Temporal affine transformation
+        vocab_forward, _ = temporal_affine_forward(forward, W_vocab, b_vocab)
+        # print('vocab_forward', vocab_forward.shape)  # (N, T, V)
+
+        # (5) Temportal softmax
+        loss, _ = temporal_softmax_loss(vocab_forward, captions_out, mask, True)
+
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
 
         return loss, grads
-
 
     def sample(self, features, max_length=30):
         """

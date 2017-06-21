@@ -159,7 +159,8 @@ def rnn_backward(dh, cache):
     _dh = 0
 
     for i in reversed(range(T)):
-        dh_c = dh[:, i, :] + _dh  # Accumulate h gradient from t+1
+        dh_c = dh[:, i, :] + _dh  # Add _dh gradient flowing from hidden layers along with dh[:,:,:]
+                                  # from the Error
         _dx, _dh, _dWx, _dWh, _db = rnn_step_backward(dh_c, cache[i])
         dx[:, i, :] += _dx
         dh0 = _dh
