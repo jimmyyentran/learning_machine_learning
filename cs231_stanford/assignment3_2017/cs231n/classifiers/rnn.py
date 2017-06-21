@@ -150,23 +150,33 @@ class CaptioningRNN(object):
         # print('W_vocab (%s %s)\n' % W_vocab.shape)  # (H, V)
 
         # (1) Affine transformation
-        h0, _ = affine_forward(features, W_proj, b_proj)  # (N, H)
+        h0, h0_c = affine_forward(features, W_proj, b_proj)  # (N, H)
         # print('h0 (%s %s)\n' % h0.shape)
 
         # (2) Word embedding layer
-        x, x_cache = word_embedding_forward(captions_in, W_embed)  # (N, T, W)
+        word_embed, word_embed_c = word_embedding_forward(captions_in, W_embed)  # (N, T, W)
 
         # (3) Hidden states
         if self.cell_type == 'rnn':
-            forward, _ = rnn_forward(x, h0, Wx, Wh, b)  # (N, T, H)
+            forward, forward_c = rnn_forward(word_embed, h0, Wx, Wh, b)  # (N, T, H)
             # print('forward', forward.shape)  # (N, T, H)
 
         # (4) Temporal affine transformation
-        vocab_forward, _ = temporal_affine_forward(forward, W_vocab, b_vocab)
+        vocab_forward, vocab_forward_c = temporal_affine_forward(forward, W_vocab, b_vocab)
         # print('vocab_forward', vocab_forward.shape)  # (N, T, V)
 
-        # (5) Temportal softmax
-        loss, _ = temporal_softmax_loss(vocab_forward, captions_out, mask, True)
+        # (5) Temporal softmax
+        loss, dx = temporal_softmax_loss(vocab_forward, captions_out, mask)
+
+        # Backpropagation
+        d_forward, grads['W_vocab'], grads['b_vocab'] = \
+            temporal_affine_backward(dx, vocab_forward_c)
+
+        d_word_embed, d_h0, grads['Wx'], grads['Wh'], grads['b'] = \
+            rnn_backward(d_forward, forward_c)
+
+        grads['W_embed'] = word_embedding_backward(d_word_embed, word_embed_c)
+        _, grads['W_proj'], grads['b_proj'] = affine_backward(d_h0, h0_c)
 
         ############################################################################
         #                             END OF YOUR CODE                             #
