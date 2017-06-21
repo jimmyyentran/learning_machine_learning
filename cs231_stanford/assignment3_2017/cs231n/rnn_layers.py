@@ -159,7 +159,7 @@ def rnn_backward(dh, cache):
     _dh = 0
 
     for i in reversed(range(T)):
-        dh_c = dh[:, i, :] + _dh  # Accumulate h gradient
+        dh_c = dh[:, i, :] + _dh  # Accumulate h gradient from t+1
         _dx, _dh, _dWx, _dWh, _db = rnn_step_backward(dh_c, cache[i])
         dx[:, i, :] += _dx
         dh0 = _dh
@@ -193,7 +193,9 @@ def word_embedding_forward(x, W):
     #                                                                            #
     # HINT: This can be done in one line using NumPy's array indexing.           #
     ##############################################################################
-    pass
+    # print(x)
+    # print(W)
+    out = W[x].shape
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
