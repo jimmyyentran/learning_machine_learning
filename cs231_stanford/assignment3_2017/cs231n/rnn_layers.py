@@ -195,7 +195,8 @@ def word_embedding_forward(x, W):
     ##############################################################################
     # print(x)
     # print(W)
-    out = W[x].shape
+    out = W[x]
+    cache = (x, W)
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
@@ -224,7 +225,17 @@ def word_embedding_backward(dout, cache):
     # Note that Words can appear more than once in a sequence.                   #
     # HINT: Look up the function np.add.at                                       #
     ##############################################################################
-    pass
+    x, W = cache
+    # print('W', W.shape)
+    # print(W)
+    # print('x', x.shape)
+    # print(x[0])
+    # print('dout', dout.shape)
+    # print(dout[0])
+    dW = np.zeros(W.shape)
+    np.add.at(dW, x, dout)
+    # print('dW', dW.shape)
+    # print(W)
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
