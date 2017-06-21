@@ -151,24 +151,21 @@ def rnn_backward(dh, cache):
     _, D = x.shape
     N, T, H = dh.shape
     # print("N: %s, D: %s, T: %s, H: %s" % (N, D, T, H))
-    # dx = np.zeros((N, T, D))
-    dx = np.zeros((T, N, D))
+    dx = np.zeros((N, T, D))
     dh0 = np.zeros(prev_h.shape)
     dWx = np.zeros(Wx.shape)
     dWh = np.zeros(Wh.shape)
     db = np.zeros(H)
     _dh = 0
 
-    dh = dh.transpose(1, 0, 2)  # (T, N, H)
     for i in reversed(range(T)):
-        dh_c = dh[i] + _dh  # Accumulate h gradient
+        dh_c = dh[:, i, :] + _dh  # Accumulate h gradient
         _dx, _dh, _dWx, _dWh, _db = rnn_step_backward(dh_c, cache[i])
-        dx[i] += _dx
+        dx[:, i, :] += _dx
         dh0 = _dh
         dWx += _dWx
         dWh += _dWh
         db += _db
-    dx = dx.transpose(1, 0, 2)  # (N, T, H)
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
