@@ -150,61 +150,25 @@ def rnn_backward(dh, cache):
     x, prev_h, Wx, Wh, next_h, x_Wx = list(cache[0])
     _, D = x.shape
     N, T, H = dh.shape
-    print("N: %s, D: %s, T: %s, H: %s" % (N, D, T, H))
+    # print("N: %s, D: %s, T: %s, H: %s" % (N, D, T, H))
     # dx = np.zeros((N, T, D))
-    # dh0 = np.zeros(prev_h.shape)
-    # dWx = np.zeros(Wx.shape)
-    # dWh = np.zeros(Wh.shape)
-    # db = np.zeros(H)
-    dx = np.ones((N, T, D))
-    dh0 = np.ones(prev_h.shape)
-    dWx = np.ones(Wx.shape)
-    dWh = np.ones(Wh.shape)
-    db = np.ones(H)
-    _dh = dh[:, T - 1, :]
-    for i in reversed(range(T)):
-    # for i in range(T):
-    #     _dx, _dh, _dWx, _dWh, _db = rnn_step_backward(dh[:, i, :], cache[i])
-        _dx, _dh, _dWx, _dWh, _db = rnn_step_backward(_dh, cache[i])
-    #     _dh *= dh
-        # _dh *= dh[:, i - 1, :]
-        # _dh += dh[:, i, :]
-        # _dh += dh[:, i, :]
-        # print(dx[:, 1, :].shape)
-        # print(_dh.shape)
-        # print(_dx.shape)
-        # dx[:, i, :] = _dx * dh[:, i - 1, :]
-        # if i + 1 < T:
-        #     dx[:, i, :] = dh[:, i + 1, :].dot(np.ones((H, N))).dot(_dx)
-        # else:
-        #     dx[:, i, :] = _dx
-        # dWx *= _dWx
-        # dh0 += _dh
-        # dWx += _dWx * _dh
-        if i + 1 < T:
-            # print(dx[:, i, :].shape)
-            # print(_dx.shape)
-            # print(np.ones((D,N)).shape)
-            # print(dh[:, i + 1, :].shape)
-            # print(_dx.dot(np.ones((D, N))).dot(dh[:, i + 1, :]))
-            # dx[:, i, :] += dh[:, i + 1, :].dot(np.ones((H, N))).dot(_dx)
-            dx[:, i, :] += _dx * _dx
-            dWx += _dWx.dot(np.ones((H, N))).dot(dh[:, i + 1, :])
-            _dh += _dh * dh[:, i + 1, :]
-        else:
-            dx[:, i, :] = _dx
-            dWx = _dWx
+    dx = np.zeros((T, N, D))
+    dh0 = np.zeros(prev_h.shape)
+    dWx = np.zeros(Wx.shape)
+    dWh = np.zeros(Wh.shape)
+    db = np.zeros(H)
+    _dh = 0
 
-        # db += _db
-        # _dh *= dh[:, i - 1, :]
-        # _dh *= dh[:, i, :]
-        # _dh += dh[:, i, :]
-        # _dh *= dh[:, i - 1, :]
-        # dx[:, i, :] += _dx
-        # dh0 *= _dh
-        # dWx *= _dWx
-        # dWh *= _dWh
-        # db *= _db
+    dh = dh.transpose(1, 0, 2)  # (T, N, H)
+    for i in reversed(range(T)):
+        dh_c = dh[i] + _dh  # Accumulate h gradient
+        _dx, _dh, _dWx, _dWh, _db = rnn_step_backward(dh_c, cache[i])
+        dx[i] += _dx
+        dh0 = _dh
+        dWx += _dWx
+        dWh += _dWh
+        db += _db
+    dx = dx.transpose(1, 0, 2)  # (N, T, H)
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
