@@ -370,7 +370,16 @@ def lstm_forward(x, h0, Wx, Wh, b):
     # TODO: Implement the forward pass for an LSTM over an entire timeseries.   #
     # You should use the lstm_step_forward function that you just defined.      #
     #############################################################################
-    pass
+    N, T, D = x.shape
+    _, H = h0.shape
+    h = np.zeros((N, T, H))
+    prev_c = np.zeros((N, H))
+    cache = [None] * T
+    for i in range(T):
+        h0, prev_c, c = lstm_step_forward(x[:, i, :], h0, prev_c, Wx, Wh, b)
+        # lstm_step_forward(x[:, i, :], h0, prev_c, Wx, Wh, b)
+        h[:, i, :] = h0
+        cache[i] = c
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
