@@ -377,7 +377,6 @@ def lstm_forward(x, h0, Wx, Wh, b):
     cache = [None] * T
     for i in range(T):
         h0, prev_c, c = lstm_step_forward(x[:, i, :], h0, prev_c, Wx, Wh, b)
-        # lstm_step_forward(x[:, i, :], h0, prev_c, Wx, Wh, b)
         h[:, i, :] = h0
         cache[i] = c
     ##############################################################################
@@ -407,7 +406,25 @@ def lstm_backward(dh, cache):
     # TODO: Implement the backward pass for an LSTM over an entire timeseries.  #
     # You should use the lstm_step_backward function that you just defined.     #
     #############################################################################
-    pass
+    _, _, prev_c, _, _, _, Wx, x, prev_h, Wh = list(cache[0])
+    _, D = x.shape
+    N, T, H = dh.shape
+    dx = np.zeros((N, T, D))
+    dWx = np.zeros(Wx.shape)
+    dWh = np.zeros(Wh.shape)
+    db = np.zeros(4 * H)
+    _dprev_c = np.zeros(prev_c.shape)
+    _dh = np.zeros((prev_h.shape))
+
+    for i in reversed(range(T)):
+        dh_c = dh[:, i, :] + _dh  # Add _dh gradient flowing from hidden layers along with dh[:,:,:]
+        # from the Error
+        _dx, _dh, _dprev_c, _dWx, _dWh, _db = lstm_step_backward(dh_c, _dprev_c, cache[i])
+        dx[:, i, :] += _dx
+        dh0 = _dh
+        dWx += _dWx
+        dWh += _dWh
+        db += _db
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################

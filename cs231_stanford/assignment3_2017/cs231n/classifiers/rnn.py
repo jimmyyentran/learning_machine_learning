@@ -160,6 +160,8 @@ class CaptioningRNN(object):
         if self.cell_type == 'rnn':
             forward, forward_c = rnn_forward(word_embed, h0, Wx, Wh, b)  # (N, T, H)
             # print('forward', forward.shape)  # (N, T, H)
+        elif self.cell_type == 'lstm':
+            forward, forward_c = lstm_forward(word_embed, h0, Wx, Wh, b)  # (N, T, H)
 
         # (4) Temporal affine transformation
         vocab_forward, vocab_forward_c = temporal_affine_forward(forward, W_vocab, b_vocab)
@@ -172,8 +174,12 @@ class CaptioningRNN(object):
         d_forward, grads['W_vocab'], grads['b_vocab'] = \
             temporal_affine_backward(dx, vocab_forward_c)
 
-        d_word_embed, d_h0, grads['Wx'], grads['Wh'], grads['b'] = \
-            rnn_backward(d_forward, forward_c)
+        if self.cell_type == 'rnn':
+            d_word_embed, d_h0, grads['Wx'], grads['Wh'], grads['b'] = \
+                rnn_backward(d_forward, forward_c)
+        elif self.cell_type == 'lstm':
+            d_word_embed, d_h0, grads['Wx'], grads['Wh'], grads['b'] = \
+                lstm_backward(d_forward, forward_c)
 
         grads['W_embed'] = word_embedding_backward(d_word_embed, word_embed_c)
         _, grads['W_proj'], grads['b_proj'] = affine_backward(d_h0, h0_c)
@@ -251,9 +257,16 @@ class CaptioningRNN(object):
         # Convert the vocabulary idx to a vector representation
         word_embed = word_embedding_forward(start, W_embed)[0].reshape((N, -1))  # (N, D)
 
+        # For lstm
+        next_c = np.zeros(next_hidden.shape)
+
         for i in range(max_length):
             # use word embedding to get next hidden layer
-            next_hidden, _ = rnn_step_forward(word_embed, next_hidden, Wx, Wh, b)  # (N, H)
+            if self.cell_type == 'rnn':
+                next_hidden, _ = rnn_step_forward(word_embed, next_hidden, Wx, Wh, b)  # (N, H)
+            elif self.cell_type == 'lstm':
+                next_hidden, next_c, _ = \
+                    lstm_step_forward(word_embed, next_hidden, next_c, Wx, Wh, b)  # (N, H)
 
             # get score outputs for the words
             word_scores = affine_forward(next_hidden, W_vocab, b_vocab)[0]  # (N, V)
