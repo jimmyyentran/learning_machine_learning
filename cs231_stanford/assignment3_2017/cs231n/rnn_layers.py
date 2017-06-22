@@ -160,7 +160,7 @@ def rnn_backward(dh, cache):
 
     for i in reversed(range(T)):
         dh_c = dh[:, i, :] + _dh  # Add _dh gradient flowing from hidden layers along with dh[:,:,:]
-                                  # from the Error
+        # from the Error
         _dx, _dh, _dWx, _dWh, _db = rnn_step_backward(dh_c, cache[i])
         dx[:, i, :] += _dx
         dh0 = _dh
@@ -267,7 +267,7 @@ def lstm_step_forward(x, prev_h, prev_c, Wx, Wh, b):
     Inputs:
     - x: Input data, of shape (N, D)
     - prev_h: Previous hidden state, of shape (N, H)
-    - prev_c: previous cell state, of shape (N, H)
+    - prev_c: previous cell stak7te, of shape (N, H)
     - Wx: Input-to-hidden weights, of shape (D, 4H)
     - Wh: Hidden-to-hidden weights, of shape (H, 4H)
     - b: Biases, of shape (4H,)
@@ -282,7 +282,17 @@ def lstm_step_forward(x, prev_h, prev_c, Wx, Wh, b):
     # TODO: Implement the forward pass for a single timestep of an LSTM.        #
     # You may want to use the numerically stable sigmoid implementation above.  #
     #############################################################################
-    pass
+    N, D = x.shape
+    A = x.dot(Wx) + prev_h.dot(Wh) + b  # (N, 4H)
+    # print(A.shape)
+    ai, af, ao, ag = np.split(A, 4, axis=1)  # (N, H)
+    # print('ai', ai.shape)
+    i_g, f_g, o_g, g_g = sigmoid(ai), sigmoid(af), sigmoid(ao), np.tanh(ag)  # (N, H)
+    # print('i_g', i_g.shape)
+    next_c = f_g * prev_c + i_g * g_g  # (N, H)
+    # print('next_c', next_c.shape)
+    next_h = o_g * np.tanh(next_c)  # (N, H)
+    # print('next_h', next_h.shape)
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
