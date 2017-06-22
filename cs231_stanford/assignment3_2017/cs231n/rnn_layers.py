@@ -288,7 +288,7 @@ def lstm_step_forward(x, prev_h, prev_c, Wx, Wh, b):
     next_c = f_g * prev_c + i_g * g_g  # (N, H)
     tanh = np.tanh(next_c)
     next_h = o_g * tanh  # (N, H)
-    cache = tanh, o_g, prev_c, i_g, f_g, g_g
+    cache = tanh, o_g, prev_c, i_g, f_g, g_g, Wx, x, prev_h, Wh
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
@@ -320,9 +320,7 @@ def lstm_step_backward(dnext_h, dnext_c, cache):
     # HINT: For sigmoid and tanh you can compute local derivatives in terms of  #
     # the output value from the nonlinearity.                                   #
     #############################################################################
-    tanh, o_g, prev_c, i_g, f_g, g_g = cache
-    dprev_h = None
-
+    tanh, o_g, prev_c, i_g, f_g, g_g, Wx, x, prev_h, Wh = cache
     do_g = tanh * dnext_h  # (N, H)
     dtanh = o_g * dnext_h  # (N, H)
     dnext_c = ((1 - tanh ** 2) * dtanh) + dnext_c  # (N, H)
@@ -330,9 +328,14 @@ def lstm_step_backward(dnext_h, dnext_c, cache):
 
     di_g, df_g, dg_g = map(lambda x: x * dnext_c, [g_g, prev_c, i_g])
     dai, daf, dao = map(lambda x, y: x * (1 - x) * y, [i_g, f_g, o_g], [di_g, df_g, do_g])
-    dag = g_g * (1 - g_g) * dg_g
+    dag = (1 - g_g ** 2) * dg_g
+
     dA = np.hstack((dai, daf, dao, dag))
-    db = dA
+    dx = dA.dot(Wx.T)  # (N, 4H) . (4H, D)
+    dWx = x.T.dot(dA)  # (D, N) . (N, 4H)
+    dprev_h = dA.dot(Wh.T)
+    dWh = prev_h.T.dot(dA)
+    db = np.ones(dA.shape[0]).dot(dA)
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
