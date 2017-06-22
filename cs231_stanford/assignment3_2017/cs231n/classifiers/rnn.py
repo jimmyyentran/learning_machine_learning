@@ -141,7 +141,7 @@ class CaptioningRNN(object):
         # gradients for self.params[k].                                            #
         ############################################################################
         # print('captions %s\n%s\n' % (captions.shape, captions))  # (N, T)
-        # print('captions_in\n%s\n' % captions_in)
+        # print('captions_in ' , captions_in.shape)  # (N, T), where T is 1 less than total T
         # print('captions_out\n%s\n' % captions_out)
         # print('mask\n%s\n' % mask)
         # print('features %s\n%s\n' % (features.shape, features))  # (N, D)
@@ -238,7 +238,36 @@ class CaptioningRNN(object):
         # functions; you'll need to call rnn_step_forward or lstm_step_forward in #
         # a loop.                                                                 #
         ###########################################################################
-        pass
+        # W_vocab (H, V)
+        # b_vocab (V,)
+        # hidden (N, H)
+
+        # Convert cnn features -> initial hidden layer
+        next_hidden = affine_forward(features, W_proj, b_proj)[0]  # (N, H)
+
+        # First word in sentence
+        start = self._start * np.ones((N, 1), dtype=np.int32)
+
+        # Convert the vocabulary idx to a vector representation
+        word_embed = word_embedding_forward(start, W_embed)[0].reshape((N, -1))  # (N, D)
+
+        for i in range(max_length):
+            # use word embedding to get next hidden layer
+            next_hidden, _ = rnn_step_forward(word_embed, next_hidden, Wx, Wh, b)  # (N, H)
+
+            # get score outputs for the words
+            word_scores = affine_forward(next_hidden, W_vocab, b_vocab)[0]  # (N, V)
+
+            # get the highest score indexes of our word
+            best_score_idx = np.argmax(word_scores, axis=1)  # (N,)
+
+            # get vector representation of the word          # (N, D)
+            word_embed = \
+                word_embedding_forward(best_score_idx[:, np.newaxis], W_embed)[0].reshape((N, -1))
+
+            # add highest scoring word to sentence
+            captions[:, i] = best_score_idx  # (N, max_length)
+
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
